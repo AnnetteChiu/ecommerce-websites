@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-primary bg-gradient text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Dynamic Content Manager</h1>
+                <p class="lead mb-4">
+                    Create, manage, and publish professional content with our powerful rich text editor, 
+                    intelligent recommendations, and comprehensive database system.
+                </p>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="{{ url_for('replit_auth.login') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Get Started
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-file-alt fa-10x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h2 class="display-6 fw-bold">Powerful Features</h2>
+            <p class="lead text-muted">Everything you need for professional content management</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-edit fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Rich Text Editor</h5>
+                    <p class="card-text">
+                        Professional-grade editor with comprehensive formatting, auto-save, 
+                        and real-time preview capabilities.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-brain fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Smart Recommendations</h5>
+                    <p class="card-text">
+                        AI-powered content recommendations using collaborative filtering 
+                        and similarity analysis.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-database fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Advanced Database</h5>
+                    <p class="card-text">
+                        PostgreSQL with full-text search, performance optimization, 
+                        and comprehensive analytics.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-images fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Image Management</h5>
+                    <p class="card-text">
+                        Upload, organize, and display images with gallery views 
+                        and seamless content integration.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-danger mb-3"></i>
+                    <h5 class="card-title">Analytics Dashboard</h5>
+                    <p class="card-text">
+                        Real-time insights into user behavior, content performance, 
+                        and recommendation effectiveness.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-fire fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Trending Content</h5>
+                    <p class="card-text">
+                        Discover popular content with intelligent trending algorithms 
+                        and category-based recommendations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="bg-light py-5">
+    <div class="container text-center">
+        <h3 class="fw-bold mb-3">Ready to Get Started?</h3>
+        <p class="lead mb-4">
+            Join our platform and start creating amazing content today.
+        </p>
+        <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            Login to Continue
+        </a>
+    </div>
+</div>
+{% endblock %}

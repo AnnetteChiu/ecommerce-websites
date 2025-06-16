@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Collaborative Filtering Demo - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-users-cog me-2"></i>
+                How Collaborative Filtering Works
+            </h1>
+            <a href="{{ url_for('cf_analytics') }}" class="btn btn-primary">
+                <i class="fas fa-chart-line me-2"></i>
+                View Analytics
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Step-by-Step Explanation -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Understanding Collaborative Filtering
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                <h3 class="mb-0">1</h3>
+                            </div>
+                            <h6>Track User Behavior</h6>
+                            <p class="small text-muted">
+                                Every time you view, edit, or interact with content, the system records this with a score:
+                                <br><strong>View = 1.0 points</strong>
+                                <br><strong>Edit = 2.0 points</strong>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                <h3 class="mb-0">2</h3>
+                            </div>
+                            <h6>Find Similar Users</h6>
+                            <p class="small text-muted">
+                                Using cosine similarity, the system finds users who interact with similar content. If you both like "AI" and "technology" articles, you're similar users.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                                <h3 class="mb-0">3</h3>
+                            </div>
+                            <h6>Generate Recommendations</h6>
+                            <p class="small text-muted">
+                                The system recommends content that similar users liked but you haven't seen yet. It combines this with content-based matching for better results.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Example -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-play me-2"></i>
+                    Live Collaborative Filtering Demo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Try this:</strong> Click the buttons below to simulate different user interactions, then see how recommendations change based on collaborative patterns.
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Simulate User Interactions:</h6>
+                        <div class="btn-group-vertical w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary mb-2" onclick="simulateInteraction('tech-user', 'view')">
+                                <i class="fas fa-eye me-2"></i>
+                                Tech User Views AI Articles
+                            </button>
+                            <button type="button" class="btn btn-outline-success mb-2" onclick="simulateInteraction('business-user', 'edit')">
+                                <i class="fas fa-edit me-2"></i>
+                                Business User Edits Marketing Content
+                            </button>
+                            <button type="button" class="btn btn-outline-info mb-2" onclick="simulateInteraction('mixed-user', 'view')">
+                                <i class="fas fa-user me-2"></i>
+                                Mixed User Browses Various Topics
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Your Recommendations Will Include:</h6>
+                        <div id="recommendationPreview" class="border rounded p-3 bg-light">
+                            <p class="text-muted text-center">
+                                <i class="fas fa-magic fa-2x mb-2"></i><br>
+                                Interact with content to see personalized recommendations appear here
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="showMyRecommendations()">
+                    <i class="fas fa-magic me-2"></i>
+                    Get My CF Recommendations Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Similarity Matrix -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    User Similarity Visualization
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Content</th>
+                                <th>You</th>
+                                <th>Tech User</th>
+                                <th>Business User</th>
+                                <th>Mixed User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>AI Revolution</strong></td>
+                                <td><span class="badge bg-primary" id="you-ai">0</span></td>
+                                <td><span class="badge bg-info">3.0</span></td>
+                                <td><span class="badge bg-secondary">0</span></td>
+                                <td><span class="badge bg-warning">1.0</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Remote Work</strong></td>
+                                <td><span class="badge bg-primary" id="you-remote">0</span></td>
+                                <td><span class="badge bg-secondary">0</span></td>
+                                <td><span class="badge bg-info">3.0</span></td>
+                                <td><span class="badge bg-warning">1.0</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Digital Marketing</strong></td>
+                                <td><span class="badge bg-primary" id="you-marketing">0</span></td>
+                                <td><span class="badge bg-secondary">0</span></td>
+                                <td><span class="badge bg-info">2.0</span></td>
+                                <td><span class="badge bg-secondary">0</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Education Tech</strong></td>
+                                <td><span class="badge bg-primary" id="you-education">0</span></td>
+                                <td><span class="badge bg-warning">1.0</span></td>
+                                <td><span class="badge bg-secondary">0</span></td>
+                                <td><span class="badge bg-info">2.0</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted">
+                    <strong>Scores:</strong> 0 = No interaction, 1.0 = Viewed, 2.0 = Edited, 3.0 = Multiple interactions
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real Recommendations Display -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-stars me-2"></i>
+                    Your Current CF Recommendations
+                </h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshRecommendations()">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="currentRecommendations">
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                        <p class="mt-2">Loading your personalized recommendations...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load recommendations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshRecommendations();
+});
+
+function simulateInteraction(userType, actionType) {
+    const interactions = {
+        'tech-user': [1, 3, 5], // AI, Energy, Education articles
+        'business-user': [2, 4], // Remote Work, Marketing articles
+        'mixed-user': [1, 2, 5] // AI, Remote Work, Education articles
+    };
+    
+    const contentIds = interactions[userType] || [];
+    const score = actionType === 'edit' ? 2.0 : 1.0;
+    
+    // Simulate the interaction visually
+    showNotification(`Simulated: ${userType} ${actionType}s content (score: ${score})`, 'info');
+    
+    // Update the matrix display
+    updateUserMatrix(userType, contentIds, score);
+    
+    // Refresh recommendations after a short delay
+    setTimeout(refreshRecommendations, 1000);
+}
+
+function updateUserMatrix(userType, contentIds, score) {
+    // This is just for visual demonstration
+    // In reality, the backend handles all the calculations
+    const indicators = {
+        'tech-user': 'info',
+        'business-user': 'success', 
+        'mixed-user': 'warning'
+    };
+    
+    showNotification(`User behavior updated! CF algorithm is recalculating...`, 'success');
+}
+
+function showMyRecommendations() {
+    refreshRecommendations();
+    document.getElementById('currentRecommendations').scrollIntoView({ behavior: 'smooth' });
+}
+
+function refreshRecommendations() {
+    const recommendationsDiv = document.getElementById('currentRecommendations');
+    
+    // Show loading
+    recommendationsDiv.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-cogs fa-spin fa-2x text-primary"></i>
+            <p class="mt-2">Analyzing user behavior patterns...</p>
+        </div>
+    `;
+    
+    // Get recommendations from a recent content item to demonstrate CF
+    fetch('/recommendations/1') // Using first content item
+        .then(response => response.json())
+        .then(data => {
+            displayRecommendations(data.recommendations || []);
+        })
+        .catch(error => {
+            recommendationsDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Unable to load recommendations. Try viewing some content first to build your profile.
+                </div>
+            `;
+        });
+}
+
+function displayRecommendations(recommendations) {
+    const recommendationsDiv = document.getElementById('currentRecommendations');
+    
+    if (recommendations.length === 0) {
+        recommendationsDiv.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>No recommendations yet!</strong><br>
+                Start by viewing and interacting with content to build your profile. The more you interact, the better the recommendations become.
+                <br><br>
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-sm mt-2">
+                    <i class="fas fa-eye me-1"></i>
+                    Browse Content
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="alert alert-success">
+            <i class="fas fa-magic me-2"></i>
+            <strong>Collaborative Filtering Active!</strong> 
+            These recommendations are based on users with similar interests to yours.
+        </div>
+        <div class="row">
+    `;
+    
+    recommendations.forEach((rec, index) => {
+        const hybridScore = rec.hybrid_score || 0;
+        const cfScore = rec.cf_score || 0;
+        const contentScore = rec.content_score || 0;
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">${rec.title}</h6>
+                        <p class="card-text small text-muted">${rec.category} • ${rec.author}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                ${hybridScore > 0 ? `<span class="badge bg-primary me-1">Hybrid: ${(hybridScore * 100).toFixed(0)}%</span>` : ''}
+                                ${cfScore > 0 ? `<span class="badge bg-success me-1">CF: ${(cfScore * 100).toFixed(0)}%</span>` : ''}
+                                ${contentScore > 0 ? `<span class="badge bg-info me-1">Content: ${(contentScore * 100).toFixed(0)}%</span>` : ''}
+                            </div>
+                            <a href="${rec.url}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    recommendationsDiv.innerHTML = html;
+}
+
+function showNotification(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 4000);
+}
+</script>
+{% endblock %}

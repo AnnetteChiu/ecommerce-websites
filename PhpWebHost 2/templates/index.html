@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Content Dashboard - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Content Dashboard
+            </h1>
+            <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                Create New Content
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    Filters
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('index') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ current_search }}" placeholder="Search title or content...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category }}" {% if category == current_category %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            {% for status in statuses %}
+                                <option value="{{ status }}" {% if status == current_status %}selected{% endif %}>
+                                    {{ status }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-secondary me-2">
+                            <i class="fas fa-search me-1"></i>
+                            Filter
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row">
+    <div class="col-lg-9">
+        <div class="row">
+        {% if content_store %}
+            {% for content_id, content in content_store.items() %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card content-card h-100 fade-in hover-lift">
+                    {% if content.image %}
+                        <div class="card-img-top" style="height: 200px; overflow: hidden;">
+                            <img src="{{ url_for('uploaded_file', filename=content.image) }}" 
+                                 class="img-fluid w-100 h-100" 
+                                 style="object-fit: cover;" 
+                                 alt="{{ content.title }}">
+                        </div>
+                    {% endif %}
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <h6 class="mb-0">{{ content.title }}</h6>
+                        <span class="badge status-badge 
+                                   {% if content.status == 'Published' %}bg-success
+                                   {% elif content.status == 'Draft' %}bg-warning
+                                   {% else %}bg-secondary{% endif %}">
+                            {{ content.status }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text content-preview text-muted">
+                            {{ content.content[:150] }}{% if content.content|length > 150 %}...{% endif %}
+                        </p>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-folder me-1"></i>
+                                {{ content.category }}
+                            </small>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                {{ content.author }}
+                            </small>
+                        </div>
+                        
+                        {% if content.tags %}
+                            <div class="mb-3">
+                                {% for tag in content.tags[:3] %}
+                                    <span class="badge bg-info tag-badge me-1">{{ tag }}</span>
+                                {% endfor %}
+                                {% if content.tags|length > 3 %}
+                                    <span class="badge bg-secondary tag-badge">+{{ content.tags|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small mb-3">
+                            <i class="fas fa-clock me-1"></i>
+                            Created: {{ content.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% if content.updated_at != content.created_at %}
+                                <br>
+                                <i class="fas fa-edit me-1"></i>
+                                Updated: {{ content.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('view_content', content_id=content_id) }}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-eye me-1"></i>
+                                View
+                            </a>
+                            <a href="{{ url_for('edit_content', content_id=content_id) }}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit me-1"></i>
+                                Edit
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="confirmDelete({{ content_id }}, '{{ content.title }}')">
+                                <i class="fas fa-trash me-1"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-5x text-muted mb-3"></i>
+                    <h4>No Content Found</h4>
+                    <p class="text-muted">
+                        {% if current_search or current_category or current_status %}
+                            No content matches your current filters. <a href="{{ url_for('index') }}">Clear filters</a> to see all content.
+                        {% else %}
+                            Start by creating your first piece of content.
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Create Content
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+
+    <!-- Trending Sidebar -->
+    <div class="col-lg-3">
+        {% if trending %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-fire me-2"></i>
+                    Trending Content
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for item in trending %}
+                    <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="d-flex">
+                            {% if item.content.image %}
+                                <div class="me-3" style="width: 60px; height: 60px; overflow: hidden; border-radius: 8px;">
+                                    <img src="{{ url_for('uploaded_file', filename=item.content.image) }}" 
+                                         class="img-fluid w-100 h-100" 
+                                         style="object-fit: cover;" 
+                                         alt="{{ item.content.title }}">
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('view_content', content_id=item.content.id) }}" class="text-decoration-none">
+                                        {{ item.content.title }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-folder me-1"></i>{{ item.content.category }} •
+                                    <span class="badge bg-danger badge-sm">
+                                        <i class="fas fa-fire me-1"></i>{{ item.score }}
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('trending_content') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-fire me-2"></i>
+                        View All Trending
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteContentTitle"></strong>?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>
+                        Delete Content
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(contentId, contentTitle) {
+    document.getElementById('deleteContentTitle').textContent = contentTitle;
+    document.getElementById('deleteForm').action = `/delete/${contentId}`;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

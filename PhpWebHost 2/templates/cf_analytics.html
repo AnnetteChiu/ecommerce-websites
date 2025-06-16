@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Collaborative Filtering Analytics - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-chart-line me-2"></i>
+                Collaborative Filtering Analytics
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Analytics temporarily unavailable: {{ error }}
+    </div>
+{% else %}
+    <!-- Statistics Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ total_interactions }}</h4>
+                            <small>Total Interactions</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-mouse-pointer fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ unique_users }}</h4>
+                            <small>Unique Users</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ user_interactions }}</h4>
+                            <small>Your Interactions</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ similar_users|length }}</h4>
+                            <small>Similar Users</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users-cog fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Popular Content -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-fire me-2"></i>
+                        Most Popular Content
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if popular_content %}
+                        <div class="list-group list-group-flush">
+                            {% for content in popular_content %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ content.title }}</h6>
+                                        <small class="text-muted">Content ID: {{ content.id }}</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ content.interaction_count }} interactions</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-chart-bar fa-2x mb-2"></i><br>
+                            No interaction data available yet
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Similar Users -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Users Similar to You
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if similar_users %}
+                        <div class="list-group list-group-flush">
+                            {% for user in similar_users %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">User {{ user.user_id }}</h6>
+                                        <small class="text-muted">Similar interests and behavior</small>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill">{{ (user.similarity * 100)|round }}% similar</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-user-friends fa-2x mb-2"></i><br>
+                            Not enough data to find similar users yet.<br>
+                            <small>Keep browsing content to improve recommendations!</small>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent User Interactions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_interactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Content</th>
+                                        <th>Action</th>
+                                        <th>Score</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for interaction in recent_interactions %}
+                                        <tr>
+                                            <td>
+                                                <code>{{ interaction.user_id[:8] }}...</code>
+                                            </td>
+                                            <td>
+                                                {% if interaction.content %}
+                                                    <a href="{{ url_for('view_content', content_id=interaction.content.id) }}" class="text-decoration-none">
+                                                        {{ interaction.content.title[:40] }}{% if interaction.content.title|length > 40 %}...{% endif %}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted">Content {{ interaction.content_id }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if interaction.interaction_type == 'view' %}
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-eye me-1"></i>View
+                                                    </span>
+                                                {% elif interaction.interaction_type == 'edit' %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-edit me-1"></i>Edit
+                                                    </span>
+                                                {% elif interaction.interaction_type == 'like' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-heart me-1"></i>Like
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        {{ interaction.interaction_type|title }}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ interaction.interaction_score }}</td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ interaction.timestamp.strftime('%m/%d %H:%M') }}
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-clock fa-2x mb-2"></i><br>
+                            No recent interactions to display
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CF Algorithm Information -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How Collaborative Filtering Works
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-step-forward me-2"></i>Step 1: Track Interactions</h6>
+                            <p class="small text-muted">
+                                The system records user actions like viewing, editing, and sharing content with different importance scores.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-calculator me-2"></i>Step 2: Calculate Similarity</h6>
+                            <p class="small text-muted">
+                                Using cosine similarity, we find users with similar content preferences and interaction patterns.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-magic me-2"></i>Step 3: Generate Recommendations</h6>
+                            <p class="small text-muted">
+                                The hybrid system combines content-based matching (60%) with collaborative filtering (40%) for personalized suggestions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
