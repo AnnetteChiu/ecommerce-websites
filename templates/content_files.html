@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Files - {{ content.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-alt me-2"></i>Files for "{{ content.title }}"</h2>
+                <a href="{{ url_for('view_content', content_id=content.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Content
+                </a>
+            </div>
+
+            {% if files %}
+                <div class="row">
+                    {% for file in files %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="{{ file.get_file_icon() }} fa-2x text-primary me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-1 text-truncate" title="{{ file.original_filename }}">
+                                                {{ file.original_filename }}
+                                            </h6>
+                                            <small class="text-muted">{{ file.file_type.title() }}</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-weight-hanging me-1"></i>
+                                            {{ file.get_file_size_formatted() }}
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ file.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('download_file', file_id=file.id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                        
+                                        {% if file.file_type == 'image' %}
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                    data-bs-toggle="modal" data-bs-target="#imageModal{{ file.id }}">
+                                                <i class="fas fa-eye me-1"></i>Preview
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Preview Modal -->
+                        {% if file.file_type == 'image' %}
+                            <div class="modal fade" id="imageModal{{ file.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">{{ file.original_filename }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ url_for('uploaded_file', filename=file.filename) }}" 
+                                                 class="img-fluid" alt="{{ file.original_filename }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Files Attached</h4>
+                    <p class="text-muted">This content doesn't have any additional files attached.</p>
+                    
+                    {% if current_user.is_authenticated and current_user.id == content.user_id %}
+                        <a href="{{ url_for('edit_content', content_id=content.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Files
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Personalized Recommendations - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-magic me-2"></i>Personalized Recommendations</h2>
+                    <p class="text-muted">Content curated just for you based on your reading preferences</p>
+                </div>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Insights Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                    <h4>{{ total_interactions }}</h4>
+                    <p class="text-muted mb-0">Total Interactions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x text-success mb-2"></i>
+                    <h4>{{ recent_interactions }}</h4>
+                    <p class="text-muted mb-0">This Week</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+                    <h4>{{ top_categories|length }}</h4>
+                    <p class="text-muted mb-0">Favorite Categories</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-user-friends fa-2x text-info mb-2"></i>
+                    <h4>{{ top_authors|length }}</h4>
+                    <p class="text-muted mb-0">Preferred Authors</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Preferences Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Your Favorite Categories</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_categories %}
+                        {% for category, score in top_categories %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-primary">{{ category }}</span>
+                            <div class="progress flex-grow-1 mx-3" style="height: 8px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ (score * 100)|round }}%" 
+                                     aria-valuenow="{{ (score * 100)|round }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">{{ (score * 100)|round }}%</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">Start reading content to build your preferences!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Your Preferred Authors</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_authors %}
+                        {% for author, score in top_authors %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">{{ author }}</span>
+                            <div class="progress flex-grow-1 mx-3" style="height: 8px;">
+                                <div class="progress-bar bg-secondary" role="progressbar" 
+                                     style="width: {{ (score * 100)|round }}%" 
+                                     aria-valuenow="{{ (score * 100)|round }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">{{ (score * 100)|round }}%</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No author preferences yet!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendation Sections -->
+    {% if hybrid_recommendations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2 text-warning"></i>
+                        Recommended for You
+                        <small class="text-muted ms-2">Smart recommendations based on your preferences</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for content in hybrid_recommendations %}
+                        <div class="col-lg-6 mb-3">
+                            <div class="card h-100 recommendation-card" data-content-id="{{ content.id }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-1">
+                                            <a href="{{ url_for('view_content', content_id=content.id) }}" class="text-decoration-none">
+                                                {{ content.title }}
+                                            </a>
+                                        </h6>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item feedback-btn" href="#" data-action="liked">
+                                                    <i class="fas fa-thumbs-up me-2"></i>Like
+                                                </a></li>
+                                                <li><a class="dropdown-item feedback-btn" href="#" data-action="saved">
+                                                    <i class="fas fa-bookmark me-2"></i>Save for Later
+                                                </a></li>
+                                                <li><a class="dropdown-item feedback-btn" href="#" data-action="dismissed">
+                                                    <i class="fas fa-times me-2"></i>Not Interested
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="badge bg-primary me-1">{{ content.category }}</span>
+                                        <small class="text-muted">by {{ content.author }}</small>
+                                    </div>
+                                    <p class="card-text small text-muted">
+                                        {{ content.content[:120] }}{% if content.content|length > 120 %}...{% endif %}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ content.created_at.strftime('%b %d, %Y') }}
+                                        </small>
+                                        <a href="{{ url_for('view_content', content_id=content.id) }}" 
+                                           class="btn btn-sm btn-primary read-btn" data-action="clicked">
+                                            Read More
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Content-Based Recommendations -->
+    {% if content_based %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain me-2 text-info"></i>
+                        Similar Content
+                        <small class="text-muted ms-2">Based on content you've engaged with</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for content in content_based[:4] %}
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100 recommendation-card" data-content-id="{{ content.id }}">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-2">
+                                        <a href="{{ url_for('view_content', content_id=content.id) }}" class="text-decoration-none">
+                                            {{ content.title }}
+                                        </a>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <span class="badge bg-info">{{ content.category }}</span>
+                                    </div>
+                                    <p class="card-text small text-muted">
+                                        {{ content.content[:80] }}{% if content.content|length > 80 %}...{% endif %}
+                                    </p>
+                                    <a href="{{ url_for('view_content', content_id=content.id) }}" 
+                                       class="btn btn-sm btn-outline-info read-btn" data-action="clicked">
+                                        Read
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Collaborative Filtering Recommendations -->
+    {% if collaborative %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2 text-success"></i>
+                        Readers Like You Also Enjoyed
+                        <small class="text-muted ms-2">Popular among users with similar preferences</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for content in collaborative[:4] %}
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100 recommendation-card" data-content-id="{{ content.id }}">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-2">
+                                        <a href="{{ url_for('view_content', content_id=content.id) }}" class="text-decoration-none">
+                                            {{ content.title }}
+                                        </a>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <span class="badge bg-success">{{ content.category }}</span>
+                                    </div>
+                                    <p class="card-text small text-muted">
+                                        {{ content.content[:80] }}{% if content.content|length > 80 %}...{% endif %}
+                                    </p>
+                                    <a href="{{ url_for('view_content', content_id=content.id) }}" 
+                                       class="btn btn-sm btn-outline-success read-btn" data-action="clicked">
+                                        Read
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Empty State -->
+    {% if not hybrid_recommendations and not content_based and not collaborative %}
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="card">
+                <div class="card-body py-5">
+                    <i class="fas fa-lightbulb fa-4x text-muted mb-3"></i>
+                    <h4>Start Building Your Preferences</h4>
+                    <p class="text-muted">Read and interact with content to get personalized recommendations!</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-book-open me-2"></i>Explore Content
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.recommendation-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,0.03);
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Track recommendation feedback
+    function trackFeedback(contentId, action) {
+        fetch('/api/recommendation-feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                content_id: contentId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Feedback tracked:', action, contentId);
+            }
+        })
+        .catch(error => console.error('Error tracking feedback:', error));
+    }
+
+    // Handle feedback buttons
+    document.querySelectorAll('.feedback-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.getAttribute('data-action');
+            const card = this.closest('.recommendation-card');
+            const contentId = card.getAttribute('data-content-id');
+            
+            trackFeedback(contentId, action);
+            
+            // Visual feedback
+            if (action === 'liked') {
+                this.innerHTML = '<i class="fas fa-thumbs-up me-2 text-primary"></i>Liked!';
+                this.classList.add('text-primary');
+            } else if (action === 'saved') {
+                this.innerHTML = '<i class="fas fa-bookmark me-2 text-warning"></i>Saved!';
+                this.classList.add('text-warning');
+            } else if (action === 'dismissed') {
+                card.style.opacity = '0.5';
+                this.innerHTML = '<i class="fas fa-check me-2 text-muted"></i>Hidden';
+            }
+        });
+    });
+
+    // Handle read buttons
+    document.querySelectorAll('.read-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const action = this.getAttribute('data-action');
+            const card = this.closest('.recommendation-card');
+            const contentId = card.getAttribute('data-content-id');
+            
+            trackFeedback(contentId, action);
+        });
+    });
+});
+</script>
+{% endblock %}

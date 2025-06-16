@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Create Content - Dynamic Content Manager{% endblock %}
+
+{% block head %}
+<!-- Quill.js Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>
+                    Create New Content
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_content') }}" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        <div id="editor-container" class="border rounded">
+                            <div id="editor" style="height: 300px;"></div>
+                        </div>
+                        {{ form.content(style="display: none;", id="hidden-content") }}
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.content.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-magic me-1"></i>
+                            Use the rich text editor to format your content with headings, bold, italic, links, lists, and more.
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% if form.category.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.category.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.author.label(class="form-label") }}
+                            {{ form.author(class="form-control" + (" is-invalid" if form.author.errors else "")) }}
+                            {% if form.author.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.author.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.tags.label(class="form-label") }}
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else "")) }}
+                        {% if form.tags.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.tags.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {{ form.tags.description }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.image.label(class="form-label") }}
+                        {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), accept="image/*") }}
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.image.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ form.image.description }}
+                        </div>
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="previewImg" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" alt="Image preview">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.files.label(class="form-label") }}
+                        
+                        <!-- Drag and Drop Zone -->
+                        <div class="file-upload-zone border-2 border-dashed rounded p-4 text-center mb-3" 
+                             style="border-color: #dee2e6; transition: all 0.3s ease;">
+                            <div class="upload-icon mb-2">
+                                <i class="fas fa-file-upload fa-2x text-primary"></i>
+                            </div>
+                            <div class="upload-text">
+                                <p class="mb-1"><strong>Drag & drop files here</strong></p>
+                                <p class="text-muted small mb-2">or click to browse</p>
+                                {{ form.files(class="form-control d-none" + (" is-invalid" if form.files.errors else ""), multiple=true, id="fileInput") }}
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-paperclip me-1"></i>Choose Files
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- File Preview Area -->
+                        <div id="filePreviewArea" class="mt-3" style="display: none;">
+                            <h6>Selected Files:</h6>
+                            <div id="fileList" class="list-group"></div>
+                        </div>
+                        
+                        {% if form.files.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.files.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ form.files.description }}
+                            <br><small>Maximum file size: 100MB per file</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Dashboard
+                        </a>
+                        
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="previewContent()">
+                                <i class="fas fa-eye me-2"></i>
+                                Preview
+                            </button>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <h4 id="previewTitle"></h4>
+                    <div class="text-muted mb-3">
+                        <small>
+                            <span id="previewCategory"></span> | 
+                            <span id="previewAuthor"></span> | 
+                            <span id="previewStatus"></span>
+                        </small>
+                    </div>
+                    <div id="previewTags" class="mb-3"></div>
+                    <div id="previewBody"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Quill.js Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+<script>
+// Initialize Quill Rich Text Editor
+var quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['link', 'image', 'video'],
+            ['blockquote', 'code-block'],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            ['clean']
+        ]
+    },
+    placeholder: 'Start writing your content here...',
+    readOnly: false
+});
+
+// Load existing content if editing
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenContent = document.getElementById('hidden-content');
+    if (hiddenContent.value) {
+        quill.root.innerHTML = hiddenContent.value;
+    }
+});
+
+// Sync Quill content with hidden textarea on form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const hiddenContent = document.getElementById('hidden-content');
+    hiddenContent.value = quill.root.innerHTML;
+    
+    // Ensure content is not empty
+    if (!hiddenContent.value.trim() || hiddenContent.value === '<p><br></p>') {
+        e.preventDefault();
+        alert('Please enter some content before submitting.');
+        return false;
+    }
+});
+
+// Auto-save content every 30 seconds
+setInterval(function() {
+    const hiddenContent = document.getElementById('hidden-content');
+    hiddenContent.value = quill.root.innerHTML;
+    
+    // Show auto-save indicator
+    showAutoSaveIndicator();
+}, 30000);
+
+function showAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'alert alert-success position-fixed';
+    indicator.style.cssText = 'top: 20px; right: 20px; z-index: 9999; padding: 8px 12px;';
+    indicator.innerHTML = '<i class="fas fa-save me-1"></i> Auto-saved';
+    
+    document.body.appendChild(indicator);
+    
+    setTimeout(function() {
+        if (indicator.parentNode) {
+            indicator.parentNode.removeChild(indicator);
+        }
+    }, 2000);
+}
+
+// Image preview functionality
+document.getElementById('image').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+function previewContent() {
+    const title = document.getElementById('title').value;
+    const content = quill.root.innerHTML;
+    const category = document.getElementById('category').value;
+    const author = document.getElementById('author').value;
+    const status = document.getElementById('status').value;
+    const tags = document.getElementById('tags').value;
+    
+    document.getElementById('previewTitle').textContent = title || 'Untitled';
+    document.getElementById('previewCategory').textContent = category || 'No Category';
+    document.getElementById('previewAuthor').textContent = author || 'No Author';
+    document.getElementById('previewStatus').textContent = status || 'No Status';
+    document.getElementById('previewBody').innerHTML = content || '<em>No content</em>';
+    
+    const tagsElement = document.getElementById('previewTags');
+    if (tags.trim()) {
+        const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        tagsElement.innerHTML = tagArray.map(tag => 
+            `<span class="badge bg-info me-1">${tag}</span>`
+        ).join('');
+    } else {
+        tagsElement.innerHTML = '';
+    }
+    
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    previewModal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=yes, maximum-scale=5.0">
+    <meta name="description" content="Professional content management system with intelligent recommendations and analytics">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Dynamic Content Manager{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS with Replit theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <!-- Additional inline styles -->
+    <style>
+        .content-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .content-card:hover {
+            transform: translateY(-2px);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+        }
+        .tag-badge {
+            font-size: 0.7rem;
+        }
+        .content-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="fas fa-cube me-2 text-primary"></i>
+                <span class="gradient-text">Content Manager</span>
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Main Navigation -->
+                <ul class="navbar-nav me-auto">
+                    <!-- Core Section -->
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-enhanced" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-2"></i>
+                            <span>{{ get_translation('my_dashboard', current_language) }}</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Content Management Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle nav-link-enhanced" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-edit me-2"></i>
+                            <span>{{ get_translation('content', current_language) }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-enhanced">
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('create_content') }}">
+                                    <i class="fas fa-pen-fancy me-2 text-success"></i>
+                                    {{ get_translation('create', current_language) }}
+                                </a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('create_story') }}">
+                                    <i class="fas fa-clock me-2 text-warning"></i>
+                                    Create Story
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('image_gallery') }}">
+                                    <i class="fas fa-images me-2 text-info"></i>
+                                    {{ get_translation('gallery', current_language) }}
+                                </a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('file_manager') }}">
+                                    <i class="fas fa-folder-open me-2 text-warning"></i>
+                                    {{ get_translation('file_manager', current_language) }}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('trending_content') }}">
+                                    <i class="fas fa-fire me-2 text-danger"></i>
+                                    {{ get_translation('trending', current_language) }}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Shop Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle nav-link-enhanced" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-shopping-bag me-2"></i>
+                            <span>Shop</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-enhanced">
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('shop') }}">
+                                    <i class="fas fa-store me-2 text-primary"></i>
+                                    Browse Products
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('new_arrivals') }}">
+                                    <i class="fas fa-sparkles me-2 text-warning"></i>
+                                    New Arrivals
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('seasonal_products') }}">
+                                    <i class="fas fa-snowflake me-2 text-info"></i>
+                                    Seasonal Products
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('advanced_search') }}">
+                                    <i class="fas fa-search-plus me-2 text-success"></i>
+                                    Advanced Search
+                                </a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('cart') }}" id="cart-shortcut">
+                                    <i class="fas fa-shopping-cart me-2 text-success"></i>
+                                    My Cart <span class="badge bg-primary ms-2" id="cart-count">0</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('wishlist') }}">
+                                    <i class="fas fa-heart me-2 text-danger"></i>
+                                    My Wishlist
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('my_orders') }}">
+                                    <i class="fas fa-receipt me-2 text-info"></i>
+                                    My Orders
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('create_product') }}">
+                                    <i class="fas fa-plus-circle me-2 text-warning"></i>
+                                    Sell Product
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('my_products') }}">
+                                    <i class="fas fa-boxes me-2 text-secondary"></i>
+                                    My Products
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+
+                    <!-- Analytics Dropdown -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle nav-link-enhanced" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            <span>{{ get_translation('analytics', current_language) }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-enhanced">
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('trading_view') }}">
+                                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                                    {{ get_translation('trading_view', current_language) }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('ai_content_insights') }}">
+                                    <i class="fas fa-brain me-2 text-info"></i>
+                                    {{ get_translation('ai_insights', current_language) }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('cf_analytics') }}">
+                                    <i class="fas fa-analytics me-2 text-info"></i>
+                                    {{ get_translation('cf_analytics', current_language) }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('database_admin') }}">
+                                    <i class="fas fa-database me-2 text-secondary"></i>
+                                    {{ get_translation('database_admin', current_language) }}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Recommendations -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-enhanced" href="{{ url_for('personalized_recommendations') }}">
+                            <i class="fas fa-sparkles me-2"></i>
+                            <span>{{ get_translation('for_you', current_language) }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Advanced Features Dropdown -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle nav-link-enhanced" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cogs me-2"></i>
+                            <span>{{ get_translation('advanced', current_language) }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-enhanced">
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('cf_demo') }}">
+                                    <i class="fas fa-graduation-cap me-2 text-info"></i>
+                                    {{ get_translation('cf_tutorial', current_language) }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('cf_visual') }}">
+                                    <i class="fas fa-project-diagram me-2 text-success"></i>
+                                    {{ get_translation('cf_visualization', current_language) }}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- User Authentication -->
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <!-- Quick Create Button -->
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-enhanced btn-create-quick" href="{{ url_for('create_content') }}">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                <span>{{ get_translation('create', current_language) }}</span>
+                            </a>
+                        </li>
+                        
+                        <!-- User Profile Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle user-profile-dropdown d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                                {% if current_user.profile_image_url %}
+                                    <img src="{{ current_user.profile_image_url }}" alt="Profile" class="profile-image me-2">
+                                {% else %}
+                                    <div class="profile-placeholder me-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="user-name">{{ current_user.first_name or current_user.email.split('@')[0] if current_user.email else 'User' }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                                <li class="dropdown-header d-flex align-items-center">
+                                    {% if current_user.profile_image_url %}
+                                        <img src="{{ current_user.profile_image_url }}" alt="Profile" class="profile-image me-2" style="width: 40px; height: 40px;">
+                                    {% else %}
+                                        <div class="profile-placeholder me-2" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-bold">{{ current_user.first_name or 'User' }}</div>
+                                        <small class="text-muted">{{ current_user.email or 'user@example.com' }}</small>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('personalized_recommendations') }}">
+                                        <i class="fas fa-user-cog me-2 text-primary"></i>
+                                        {{ get_translation('my_dashboard', current_language) }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('file_manager') }}">
+                                        <i class="fas fa-folder me-2 text-warning"></i>
+                                        {{ get_translation('file_manager', current_language) }}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-header">
+                                    <i class="fas fa-language me-2"></i>{{ get_translation('language', current_language) }}
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('set_language', language='en') }}">
+                                        <i class="fas fa-flag-usa me-2"></i>
+                                        English
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('set_language', language='ko') }}">
+                                        <i class="fas fa-flag me-2"></i>
+                                        한국어
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('replit_auth.logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2 text-danger"></i>
+                                        {{ get_translation('logout', current_language) }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <!-- Language Switcher for Non-authenticated Users -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle nav-link-enhanced" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-language me-2"></i>
+                                <span>{{ get_translation('language', current_language) }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-enhanced dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('set_language', language='en') }}">
+                                        <i class="fas fa-flag-usa me-2"></i>
+                                        English
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-enhanced" href="{{ url_for('set_language', language='ko') }}">
+                                        <i class="fas fa-flag me-2"></i>
+                                        한국어
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- Login Button for Non-authenticated Users -->
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-enhanced btn-login" href="{{ url_for('replit_auth.login') }}">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                <span>로그인</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% if error_message %}
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center">
+                    <div class="card">
+                        <div class="card-body">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h4 class="card-title">{{ error_message }}</h4>
+                            <p class="card-text text-muted">{{ error_description }}</p>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                <i class="fas fa-home me-2"></i>
+                                Go Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            {% block content %}{% endblock %}
+        {% endif %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Dynamic Content Manager</h6>
+                    <p class="text-muted mb-0">Powered by Flask & Bootstrap</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ moment().format('YYYY') if moment else '2025' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Shopping Cart -->
+    {% if current_user.is_authenticated %}
+    <div class="floating-cart" id="floatingCart">
+        <i class="fas fa-shopping-cart"></i>
+        <div class="floating-cart-badge" id="floatingCartBadge" style="display: none;">0</div>
+    </div>
+    
+    <div class="floating-cart-mini" id="floatingCartMini">
+        <div class="floating-cart-header">
+            <h6 class="mb-0">🛒 Shopping Cart</h6>
+        </div>
+        <div class="floating-cart-body" id="floatingCartBody">
+            <!-- Cart items will be loaded here -->
+        </div>
+        <div class="floating-cart-footer">
+            <div class="floating-cart-total">
+                <strong>Total: <span id="floatingCartTotal">$0.00</span></strong>
+            </div>
+            <div class="floating-cart-actions">
+                <a href="{{ url_for('cart') }}" class="floating-cart-btn floating-cart-btn-primary">View Cart</a>
+                <a href="{{ url_for('shop') }}" class="floating-cart-btn floating-cart-btn-outline">Shop More</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

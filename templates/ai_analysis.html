@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}AI Content Analysis - {{ content.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.score-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+.score-good { background: linear-gradient(135deg, #17a2b8, #007bff); }
+.score-average { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.score-poor { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+
+.detailed-score {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.detailed-score:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.score-bar {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.score-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+}
+
+.insight-item {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 6px 6px 0;
+}
+
+.insight-excellent { border-left-color: #28a745; }
+.insight-good { border-left-color: #17a2b8; }
+.insight-warning { border-left-color: #ffc107; }
+
+.recommendation-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header with AI Badge -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-brain text-primary me-2"></i>
+                        AI Content Analysis
+                    </h1>
+                    <span class="ai-badge">
+                        <i class="fas fa-robot me-1"></i>
+                        Powered by AI
+                    </span>
+                </div>
+                <a href="{{ url_for('view_content', content_id=content.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Content
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ content.title }}</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <span class="badge bg-primary">{{ content.category }}</span>
+                        <span class="badge bg-secondary">{{ content.status }}</span>
+                        <span class="badge bg-info">{{ content.author }}</span>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ content.created_at.strftime('%B %d, %Y') if content.created_at else 'Unknown date' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Score Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Overall Relevance Score</h4>
+                    <div class="d-flex justify-content-center align-items-center mb-3">
+                        {% set score = analysis.overall_score %}
+                        {% if score >= 8 %}
+                            {% set score_class = "score-excellent" %}
+                        {% elif score >= 6 %}
+                            {% set score_class = "score-good" %}
+                        {% elif score >= 4 %}
+                            {% set score_class = "score-average" %}
+                        {% else %}
+                            {% set score_class = "score-poor" %}
+                        {% endif %}
+                        <div class="score-circle {{ score_class }}">
+                            {{ "%.1f"|format(score) }}
+                        </div>
+                    </div>
+                    <p class="lead mb-0">{{ analysis.score_explanation }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Scores -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-bar text-primary me-2"></i>
+                Detailed Analysis
+            </h4>
+            <div class="row">
+                {% for criterion, data in analysis.detailed_scores.items() %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="detailed-score">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 text-capitalize">{{ criterion.replace('_', ' ') }}</h6>
+                            <span class="badge bg-primary">{{ data.score }}/10</span>
+                        </div>
+                        <div class="score-bar">
+                            {% set width = (data.score / 10) * 100 %}
+                            {% if data.score >= 8 %}
+                                {% set bar_color = "#28a745" %}
+                            {% elif data.score >= 6 %}
+                                {% set bar_color = "#17a2b8" %}
+                            {% elif data.score >= 4 %}
+                                {% set bar_color = "#ffc107" %}
+                            {% else %}
+                                {% set bar_color = "#dc3545" %}
+                            {% endif %}
+                            <div class="score-fill" style="width: {{ width }}%; background-color: {{ bar_color }};"></div>
+                        </div>
+                        <small class="text-muted">{{ data.explanation }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h4 class="mb-3">
+                <i class="fas fa-lightbulb text-warning me-2"></i>
+                Key Insights
+            </h4>
+            {% for insight in analysis.insights %}
+            <div class="insight-item {% if insight.startswith('✓') %}insight-excellent{% elif insight.startswith('→') %}insight-good{% else %}insight-warning{% endif %}">
+                {{ insight }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="col-md-6">
+            <h4 class="mb-3">
+                <i class="fas fa-compass text-success me-2"></i>
+                Recommendations
+            </h4>
+            {% if analysis.recommendations %}
+                {% for recommendation in analysis.recommendations %}
+                <div class="recommendation-card">
+                    <i class="fas fa-arrow-up me-2"></i>
+                    {{ recommendation }}
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Great work! Your content is performing well across all criteria.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('edit_content', content_id=content.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i>
+                    Improve Content
+                </a>
+                <a href="{{ url_for('ai_content_insights') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-analytics me-1"></i>
+                    View All Insights
+                </a>
+                <button onclick="shareAnalysis()" class="btn btn-outline-secondary">
+                    <i class="fas fa-share me-1"></i>
+                    Share Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareAnalysis() {
+    const analysisData = {
+        title: "{{ content.title }}",
+        score: {{ analysis.overall_score }},
+        explanation: "{{ analysis.score_explanation }}"
+    };
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `AI Analysis: ${analysisData.title}`,
+            text: `Content Score: ${analysisData.score}/10 - ${analysisData.explanation}`,
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        const shareText = `AI Analysis for "${analysisData.title}"\nScore: ${analysisData.score}/10\n${analysisData.explanation}\n${window.location.href}`;
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Analysis details copied to clipboard!');
+        });
+    }
+}
+
+// Animate score bars on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreFills = document.querySelectorAll('.score-fill');
+    scoreFills.forEach((fill, index) => {
+        setTimeout(() => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 100);
+        }, index * 150);
+    });
+});
+</script>
+{% endblock %}

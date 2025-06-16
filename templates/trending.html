@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Trending Content - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-fire me-2"></i>
+                Trending Content
+            </h1>
+            <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                Create Content
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if trending %}
+    <div class="row">
+        {% for item in trending %}
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card trending-card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">{{ item.content.title }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-folder me-1"></i>{{ item.content.category }} •
+                                <i class="fas fa-user me-1"></i>{{ item.content.author }}
+                            </small>
+                        </div>
+                        <div class="trending-score">
+                            <span class="badge bg-danger">
+                                <i class="fas fa-fire me-1"></i>
+                                {{ item.score }} trend score
+                            </span>
+                        </div>
+                    </div>
+                    {% if item.content.image %}
+                        <div class="position-relative">
+                            <div class="card-img-top" style="height: 200px; overflow: hidden;">
+                                <img src="{{ url_for('uploaded_file', filename=item.content.image) }}" 
+                                     class="img-fluid w-100 h-100" 
+                                     style="object-fit: cover;" 
+                                     alt="{{ item.content.title }}">
+                            </div>
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-danger bg-opacity-90">
+                                    <i class="fas fa-fire me-1"></i>
+                                    Trending
+                                </span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Fallback image for content without images -->
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-file-alt fa-3x mb-2"></i>
+                                <br>
+                                <small>{{ item.content.category }}</small>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <p class="card-text content-preview text-muted">
+                            {{ item.content.content[:200] }}{% if item.content.content|length > 200 %}...{% endif %}
+                        </p>
+                        
+                        {% if item.content.tags %}
+                            <div class="mb-3">
+                                <h6 class="small mb-2">Popular Tags:</h6>
+                                {% for tag in item.content.get_tags_list()[:4] %}
+                                    <span class="badge bg-info me-1">{{ tag }}</span>
+                                {% endfor %}
+                                {% if item.content.get_tags_list()|length > 4 %}
+                                    <span class="badge bg-secondary">+{{ item.content.get_tags_list()|length - 4 }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small mb-3">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ item.content.created_at.strftime('%B %d, %Y') }}
+                            {% if item.content.updated_at != item.content.created_at %}
+                                <br>
+                                <i class="fas fa-edit me-1"></i>
+                                Updated: {{ item.content.updated_at.strftime('%B %d, %Y') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('view_content', content_id=item.content.id) }}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-eye me-1"></i>
+                                View
+                            </a>
+                            <a href="{{ url_for('edit_content', content_id=item.content.id) }}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit me-1"></i>
+                                Edit
+                            </a>
+                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                    onclick="shareContent('{{ url_for('view_content', content_id=item.content.id, _external=True) }}')">
+                                <i class="fas fa-share me-1"></i>
+                                Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-fire fa-5x text-muted mb-3"></i>
+                <h4>No Trending Content Yet</h4>
+                <p class="text-muted">
+                    Create more content with popular tags to see trending items here.
+                </p>
+                <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Create Content
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function shareContent(url) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check out this trending content',
+            url: url
+        });
+    } else {
+        // Fallback - copy to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+            showNotification('Link copied to clipboard!', 'success');
+        });
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+
+// Add hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const trendingCards = document.querySelectorAll('.trending-card');
+    trendingCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+{% endblock %}

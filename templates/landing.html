@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1 class="hero-title">Dynamic Content Manager</h1>
+                <p class="hero-subtitle">Create, manage, and discover content with intelligent recommendations</p>
+                <div class="hero-actions">
+                    <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Get Started
+                    </a>
+                    <a href="#features" class="btn btn-outline-secondary btn-lg">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Limited-Time Stories Section -->
+{% if stories %}
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <i class="fas fa-clock me-2 text-warning"></i>
+                    限時動態 / Limited-Time Stories
+                </h4>
+                <div class="stories-container">
+                    <div class="row g-3">
+                        {% for story in stories %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="story-card h-100">
+                                {% if story.image_url %}
+                                <div class="story-image" style="background-image: url('{{ story.image_url }}');">
+                                    <div class="story-overlay">
+                                        <span class="story-type-badge">{{ story.story_type }}</span>
+                                        <span class="story-time-badge">{{ story.time_remaining }}</span>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="story-image story-no-image">
+                                    <div class="story-overlay">
+                                        <span class="story-type-badge">{{ story.story_type }}</span>
+                                        <span class="story-time-badge">{{ story.time_remaining }}</span>
+                                    </div>
+                                    <div class="story-icon">
+                                        {% if story.story_type == 'product' %}
+                                        <i class="fas fa-shopping-bag fa-2x"></i>
+                                        {% elif story.story_type == 'event' %}
+                                        <i class="fas fa-calendar-alt fa-2x"></i>
+                                        {% elif story.story_type == 'news' %}
+                                        <i class="fas fa-newspaper fa-2x"></i>
+                                        {% else %}
+                                        <i class="fas fa-bolt fa-2x"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="story-content">
+                                    <h6 class="story-title">{{ story.title }}</h6>
+                                    {% if story.content %}
+                                    <p class="story-description">{{ story.content[:60] }}{% if story.content|length > 60 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <div class="story-meta">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            {{ story.author.first_name or story.author.email }}
+                                        </small>
+                                        {% if story.product %}
+                                        <div class="mt-2">
+                                            <a href="{{ url_for('product_detail', product_id=story.product.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-shopping-cart me-1"></i>查看商品
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Powerful Content Management Features</h2>
+                <p class="text-muted">Everything you need to create and manage dynamic content</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <h5>Rich Text Editor</h5>
+                    <p>Professional-grade rich text editing with comprehensive formatting options, auto-save, and real-time preview.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h5>Image Management</h5>
+                    <p>Upload, organize, and manage images with support for multiple formats including PNG, JPG, GIF, and SVG.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5>Smart Recommendations</h5>
+                    <p>AI-powered content recommendations using collaborative filtering and content similarity analysis.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5>Analytics Dashboard</h5>
+                    <p>Real-time insights into user behavior, content performance, and recommendation effectiveness.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h5>Full-Text Search</h5>
+                    <p>PostgreSQL-powered full-text search with automatic indexing and fast query performance.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5>Multi-User Support</h5>
+                    <p>Secure user authentication with individual content ownership and access control.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Public Content Preview -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Latest Published Content</h2>
+                <p class="text-muted">Discover what others are creating</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for item in public_content[:6] %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card content-preview-card">
+                    {% if item.image %}
+                    <img src="{{ url_for('uploaded_file', filename=item.image) }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h6 class="card-title">{{ item.title[:50] }}{% if item.title|length > 50 %}...{% endif %}</h6>
+                        <p class="card-text text-muted small">{{ item.content[:100] }}{% if item.content|length > 100 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ item.category }}</small>
+                            <small class="text-muted">{{ item.created_at.strftime('%b %d') }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i>Login to View All Content
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2>Ready to Get Started?</h2>
+                <p class="text-muted mb-4">Join our community and start creating amazing content today</p>
+                <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Start Creating
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 100px 0;
+    margin-bottom: 0;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.hero-actions {
+    margin-top: 2rem;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.content-preview-card {
+    transition: transform 0.2s ease;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.content-preview-card:hover {
+    transform: translateY(-3px);
+}
+</style>
+{% endblock %}

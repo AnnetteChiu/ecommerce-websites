@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Content - Dynamic Content Manager{% endblock %}
+
+{% block head %}
+<!-- Quill.js Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Content
+                </h4>
+                <div>
+                    <a href="{{ url_for('view_content', content_id=content.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-eye me-1"></i>
+                        View
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_content', content_id=content.id) }}" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        <div id="editor-container" class="border rounded">
+                            <div id="editor" style="height: 300px;"></div>
+                        </div>
+                        {{ form.content(style="display: none;", id="hidden-content") }}
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.content.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-magic me-1"></i>
+                            Use the rich text editor to format your content with headings, bold, italic, links, lists, and more.
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% if form.category.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.category.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.author.label(class="form-label") }}
+                            {{ form.author(class="form-control" + (" is-invalid" if form.author.errors else "")) }}
+                            {% if form.author.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.author.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.tags.label(class="form-label") }}
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else "")) }}
+                        {% if form.tags.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.tags.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {{ form.tags.description }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.image.label(class="form-label") }}
+                        {% if content.image %}
+                            <div class="mb-2">
+                                <small class="text-muted">Current image:</small><br>
+                                <img src="{{ url_for('uploaded_file', filename=content.image) }}" 
+                                     class="img-thumbnail" style="max-width: 200px; max-height: 200px;" 
+                                     alt="Current image">
+                            </div>
+                        {% endif %}
+                        {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), accept="image/*") }}
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.image.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ form.image.description }}
+                        </div>
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <small class="text-muted">New image preview:</small><br>
+                            <img id="previewImg" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" alt="Image preview">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.files.label(class="form-label") }}
+                        
+                        <!-- Drag and Drop Zone -->
+                        <div class="file-upload-zone border-2 border-dashed rounded p-4 text-center mb-3" 
+                             style="border-color: #dee2e6; transition: all 0.3s ease;">
+                            <div class="upload-icon mb-2">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-muted"></i>
+                            </div>
+                            <div class="upload-text">
+                                <p class="mb-1"><strong>Drag & drop new files here</strong></p>
+                                <p class="text-muted small mb-2">or click to browse</p>
+                                {{ form.files(class="form-control d-none" + (" is-invalid" if form.files.errors else ""), multiple=true, id="fileInput") }}
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-1"></i>Choose Files
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- File Preview Area -->
+                        <div id="filePreviewArea" class="mt-3" style="display: none;">
+                            <h6>New Files to Upload:</h6>
+                            <div id="fileList" class="list-group"></div>
+                        </div>
+                        
+                        {% if form.files.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.files.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ form.files.description }}
+                            <br><small>Maximum file size: 100MB per file</small>
+                        </div>
+                        
+                        <!-- Existing Files Display -->
+                        {% if content.files %}
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-paperclip me-1"></i>
+                                    Current Files ({{ content.files|length }})
+                                </h6>
+                                <div class="row">
+                                    {% for file in content.files %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="{{ file.get_file_icon() }} text-primary me-2"></i>
+                                                <span class="text-truncate me-2" title="{{ file.original_filename }}">
+                                                    {{ file.original_filename }}
+                                                </span>
+                                                <small class="text-muted">({{ file.get_file_size_formatted() }})</small>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Upload new files above to add them. Existing files will be preserved.
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Content Metadata -->
+                    <div class="alert alert-info">
+                        <h6>Content Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Created:</strong> {{ content.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Last Updated:</strong> {{ content.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('view_content', content_id=content.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Content
+                        </a>
+                        
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="previewContent()">
+                                <i class="fas fa-eye me-2"></i>
+                                Preview
+                            </button>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <h4 id="previewTitle"></h4>
+                    <div class="text-muted mb-3">
+                        <small>
+                            <span id="previewCategory"></span> | 
+                            <span id="previewAuthor"></span> | 
+                            <span id="previewStatus"></span>
+                        </small>
+                    </div>
+                    <div id="previewTags" class="mb-3"></div>
+                    <div id="previewBody"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Quill.js Rich Text Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+<script>
+// Initialize Quill Rich Text Editor
+var quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['link', 'image', 'video'],
+            ['blockquote', 'code-block'],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            ['clean']
+        ]
+    },
+    placeholder: 'Start editing your content here...',
+    readOnly: false
+});
+
+// Load existing content when editing
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenContent = document.getElementById('hidden-content');
+    if (hiddenContent.value) {
+        quill.root.innerHTML = hiddenContent.value;
+    }
+});
+
+// Sync Quill content with hidden textarea on form submission
+document.querySelector('form').addEventListener('submit', function() {
+    const hiddenContent = document.getElementById('hidden-content');
+    hiddenContent.value = quill.root.innerHTML;
+});
+
+// Auto-save content every 30 seconds
+setInterval(function() {
+    const hiddenContent = document.getElementById('hidden-content');
+    hiddenContent.value = quill.root.innerHTML;
+    
+    // Show auto-save indicator
+    showAutoSaveIndicator();
+}, 30000);
+
+function showAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'alert alert-success position-fixed';
+    indicator.style.cssText = 'top: 20px; right: 20px; z-index: 9999; padding: 8px 12px;';
+    indicator.innerHTML = '<i class="fas fa-save me-1"></i> Auto-saved';
+    
+    document.body.appendChild(indicator);
+    
+    setTimeout(function() {
+        if (indicator.parentNode) {
+            indicator.parentNode.removeChild(indicator);
+        }
+    }, 2000);
+}
+
+// Image preview functionality
+document.getElementById('image').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+function previewContent() {
+    const title = document.getElementById('title').value;
+    const content = quill.root.innerHTML;
+    const category = document.getElementById('category').value;
+    const author = document.getElementById('author').value;
+    const status = document.getElementById('status').value;
+    const tags = document.getElementById('tags').value;
+    
+    document.getElementById('previewTitle').textContent = title || 'Untitled';
+    document.getElementById('previewCategory').textContent = category || 'No Category';
+    document.getElementById('previewAuthor').textContent = author || 'No Author';
+    document.getElementById('previewStatus').textContent = status || 'No Status';
+    document.getElementById('previewBody').innerHTML = content || '<em>No content</em>';
+    
+    const tagsElement = document.getElementById('previewTags');
+    if (tags.trim()) {
+        const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        tagsElement.innerHTML = tagArray.map(tag => 
+            `<span class="badge bg-info me-1">${tag}</span>`
+        ).join('');
+    } else {
+        tagsElement.innerHTML = '';
+    }
+    
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    previewModal.show();
+}
+</script>
+{% endblock %}

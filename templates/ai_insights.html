@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}AI Content Insights{% endblock %}
+
+{% block extra_head %}
+<style>
+.insight-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.insight-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.score-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+.score-good { background: linear-gradient(135deg, #17a2b8, #007bff); }
+.score-average { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.score-poor { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.ai-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+}
+
+.filter-controls {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.content-preview {
+    max-height: 100px;
+    overflow: hidden;
+    margin: 1rem 0;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.analysis-summary {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.quick-insight {
+    display: inline-block;
+    background: rgba(0,123,255,0.1);
+    color: #007bff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    margin: 0.25rem 0.25rem 0.25rem 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- AI Header -->
+    <div class="ai-header text-center">
+        <div class="container">
+            <h1 class="mb-3">
+                <i class="fas fa-brain me-3"></i>
+                AI Content Insights
+            </h1>
+            <p class="lead mb-0">
+                Intelligent analysis of your content performance and quality metrics
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Summary Statistics -->
+        {% if summary_stats %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ summary_stats.total_content }}</span>
+                <span class="stat-label">Total Content</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ summary_stats.analyzed_content }}</span>
+                <span class="stat-label">Analyzed Items</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ summary_stats.average_score }}</span>
+                <span class="stat-label">Average Score</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ summary_stats.excellent_content }}</span>
+                <span class="stat-label">Excellent Content</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ summary_stats.needs_improvement }}</span>
+                <span class="stat-label">Needs Improvement</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary active" onclick="filterContent('all')">
+                            All Content
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="filterContent('excellent')">
+                            Excellent (8+)
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="filterContent('needs-improvement')">
+                            Needs Work (&lt;6)
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <select class="form-select form-select-sm d-inline-block w-auto" onchange="sortContent(this.value)">
+                        <option value="score-desc">Highest Score First</option>
+                        <option value="score-asc">Lowest Score First</option>
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Analysis Grid -->
+        {% if content_analyses %}
+        <div class="row" id="content-grid">
+            {% for item in content_analyses %}
+            {% set content = item.content %}
+            {% set analysis = item.analysis %}
+            {% if analysis and 'overall_score' in analysis %}
+            {% set score = analysis.overall_score %}
+            {% if score >= 8 %}
+                {% set score_class = "score-excellent" %}
+                {% set filter_class = "excellent" %}
+            {% elif score >= 6 %}
+                {% set score_class = "score-good" %}
+                {% set filter_class = "good" %}
+            {% elif score >= 4 %}
+                {% set score_class = "score-average" %}
+                {% set filter_class = "average" %}
+            {% else %}
+                {% set score_class = "score-poor" %}
+                {% set filter_class = "needs-improvement" %}
+            {% endif %}
+            
+            <div class="col-lg-6 col-xl-4 content-item" data-score="{{ score }}" data-filter="{{ filter_class }}" data-date="{{ content.created_at }}">
+                <div class="insight-card">
+                    <div class="score-badge {{ score_class }}">
+                        {{ "%.1f"|format(score) }}
+                    </div>
+                    
+                    <h5 class="card-title mb-2" style="padding-right: 60px;">
+                        <a href="{{ url_for('view_content', content_id=content.id) }}" class="text-decoration-none">
+                            {{ content.title }}
+                        </a>
+                    </h5>
+                    
+                    <div class="d-flex gap-1 mb-2">
+                        <span class="badge bg-primary">{{ content.category }}</span>
+                        <span class="badge bg-secondary">{{ content.status }}</span>
+                    </div>
+                    
+                    <div class="content-preview">
+                        {{ content.content[:150] }}{% if content.content|length > 150 %}...{% endif %}
+                    </div>
+                    
+                    <!-- Quick Insights -->
+                    {% if analysis.insights %}
+                    <div class="mb-3">
+                        {% for insight in analysis.insights[:3] %}
+                        <span class="quick-insight">
+                            {% if insight.startswith('✓') %}
+                                <i class="fas fa-check me-1"></i>{{ insight[2:] }}
+                            {% elif insight.startswith('→') %}
+                                <i class="fas fa-arrow-right me-1"></i>{{ insight[2:] }}
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ insight[2:] if insight.startswith('⚠') else insight }}
+                            {% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('detailed_ai_analysis', content_id=content.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-chart-line me-1"></i>
+                            Full Analysis
+                        </a>
+                        <a href="{{ url_for('edit_content', content_id=content.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit me-1"></i>
+                            Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-robot text-muted" style="font-size: 4rem;"></i>
+            <h3 class="mt-3 text-muted">No Content to Analyze</h3>
+            <p class="text-muted mb-4">Create some content to see AI-powered insights and recommendations.</p>
+            <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>
+                Create Your First Content
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Performance Tips -->
+        {% if summary_stats and summary_stats.average_score > 0 %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            Performance Tips
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Content Quality</h6>
+                                <p class="small text-muted">
+                                    {% if summary_stats.average_score >= 8 %}
+                                    Excellent work! Your content consistently meets high quality standards.
+                                    {% elif summary_stats.average_score >= 6 %}
+                                    Good quality overall. Focus on improving clarity and depth for even better results.
+                                    {% else %}
+                                    Consider revising content structure, adding more detail, and improving readability.
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Optimization Strategy</h6>
+                                <p class="small text-muted">
+                                    {% if summary_stats.needs_improvement > 0 %}
+                                    Start by improving your {{ summary_stats.needs_improvement }} lowest-scoring items.
+                                    {% else %}
+                                    Maintain consistency and explore new content formats to engage your audience.
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>AI Recommendations</h6>
+                                <p class="small text-muted">
+                                    Use the detailed analysis to identify specific areas for improvement in each piece of content.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterContent(filter) {
+    const items = document.querySelectorAll('.content-item');
+    const buttons = document.querySelectorAll('.filter-controls .btn');
+    
+    // Update active button
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    items.forEach(item => {
+        if (filter === 'all') {
+            item.style.display = 'block';
+        } else if (filter === 'excellent') {
+            const score = parseFloat(item.dataset.score);
+            item.style.display = score >= 8 ? 'block' : 'none';
+        } else if (filter === 'needs-improvement') {
+            const score = parseFloat(item.dataset.score);
+            item.style.display = score < 6 ? 'block' : 'none';
+        } else {
+            item.style.display = item.dataset.filter === filter ? 'block' : 'none';
+        }
+    });
+}
+
+function sortContent(sortBy) {
+    const grid = document.getElementById('content-grid');
+    const items = Array.from(grid.children);
+    
+    items.sort((a, b) => {
+        switch(sortBy) {
+            case 'score-desc':
+                return parseFloat(b.dataset.score) - parseFloat(a.dataset.score);
+            case 'score-asc':
+                return parseFloat(a.dataset.score) - parseFloat(b.dataset.score);
+            case 'date-desc':
+                return new Date(b.dataset.date) - new Date(a.dataset.date);
+            case 'date-asc':
+                return new Date(a.dataset.date) - new Date(b.dataset.date);
+            default:
+                return 0;
+        }
+    });
+    
+    items.forEach(item => grid.appendChild(item));
+}
+
+// Animate cards on load
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.insight-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}Seasonal Products{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="seasonal-header">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="gradient-text mb-2">
+                            <i class="fas fa-snowflake me-2"></i>
+                            Seasonal Products
+                        </h1>
+                        <p class="text-muted mb-0">Discover products available for specific seasons and occasions</p>
+                    </div>
+                    <div class="seasonal-stats">
+                        <div class="d-flex gap-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ current_seasonal }}</div>
+                                <div class="stat-label">Available Now</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ upcoming_seasonal }}</div>
+                                <div class="stat-label">Coming Soon</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ total_seasonal }}</div>
+                                <div class="stat-label">Total Seasonal</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Sorting -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filters-section bg-light rounded p-3">
+                <form method="GET" id="filters-form" class="row g-3 align-items-end">
+                    <!-- Season Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Season</label>
+                        <select name="season" class="form-select">
+                            <option value="">All Seasons</option>
+                            {% for season in seasons %}
+                            <option value="{{ season }}" {% if current_season == season %}selected{% endif %}>
+                                {{ season.title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Category Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>
+                                {{ cat }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Availability</label>
+                        <select name="status" class="form-select">
+                            <option value="available" {% if current_status == 'available' %}selected{% endif %}>Available Now</option>
+                            <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Products</option>
+                            <option value="out_of_season" {% if current_status == 'out_of_season' %}selected{% endif %}>Out of Season</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sort Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Sort By</label>
+                        <select name="sort" class="form-select">
+                            <option value="season" {% if current_sort == 'season' %}selected{% endif %}>Season</option>
+                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                            <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                            <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>
+                            Apply
+                        </button>
+                    </div>
+                    
+                    <!-- Clear Button -->
+                    <div class="col-md-2">
+                        <a href="{{ url_for('seasonal_products') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-2"></i>
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Showing {{ products.items|length }} of {{ products.total }} seasonal products
+                    {% if current_season %}
+                        for <strong>{{ current_season.title() }}</strong>
+                    {% endif %}
+                </div>
+                <div class="page-info">
+                    {% if products.pages > 1 %}
+                        Page {{ products.page }} of {{ products.pages }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row">
+        {% if products.items %}
+            {% for product in products.items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card product-card h-100 position-relative">
+                    <!-- Seasonal Badge -->
+                    <div class="position-absolute top-0 start-0 p-2 z-index-1">
+                        {% if product.is_currently_seasonal %}
+                            <span class="badge seasonal-badge-{{ product.season_type or 'default' }} pulse-animation">
+                                <i class="fas fa-{{ season_icons.get(product.season_type, 'calendar') }} me-1"></i>
+                                {{ product.season_type.title() if product.season_type else 'Seasonal' }}
+                            </span>
+                        {% elif product.days_until_seasonal %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ product.days_until_seasonal }}d until available
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-ban me-1"></i>
+                                Out of Season
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Image -->
+                    <div class="product-image-container">
+                        {% if product.image_url %}
+                            <img src="{{ product.image_url }}" 
+                                 class="card-img-top product-image" 
+                                 alt="{{ product.name }}"
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                 style="height: 200px;">
+                                <i class="fas fa-image text-muted fa-3x"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-2">
+                            <span class="badge bg-secondary mb-2">{{ product.category }}</span>
+                        </div>
+                        
+                        <h5 class="card-title product-title mb-2">
+                            <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                               class="text-decoration-none text-dark product-title-link">
+                                {{ product.name }}
+                            </a>
+                        </h5>
+                        
+                        <p class="card-text text-muted small mb-3">
+                            {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+                        </p>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h5 mb-0 text-primary">${{ "%.2f"|format(product.price) }}</span>
+                                {% if product.is_currently_seasonal %}
+                                    {% if product.product_type == 'digital' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-download me-1"></i>
+                                            Digital
+                                        </span>
+                                    {% elif product.stock_quantity > 0 %}
+                                        <span class="text-success small">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            In Stock ({{ product.stock_quantity }})
+                                        </span>
+                                    {% else %}
+                                        <span class="text-danger small">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Out of Stock
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-warning small">
+                                        <i class="fas fa-calendar-times me-1"></i>
+                                        Seasonal Item
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Add to Cart Button -->
+                            {% if current_user.is_authenticated %}
+                                {% if product.is_currently_seasonal and (product.stock_quantity > 0 or product.product_type == 'digital') %}
+                                <form action="{{ url_for('add_to_cart') }}" method="POST" class="add-to-cart-form">
+                                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-primary-enhanced w-100">
+                                        <i class="fas fa-cart-plus me-2"></i>
+                                        Add to Cart
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn btn-secondary w-100" disabled>
+                                    <i class="fas fa-times me-2"></i>
+                                    {% if not product.is_currently_seasonal %}
+                                        Not Available
+                                    {% else %}
+                                        Out of Stock
+                                    {% endif %}
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center">
+                                    <a href="{{ url_for('replit_auth.login') }}">Login</a> to purchase
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- No Products Found -->
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-snowflake fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted mb-2">No Seasonal Products Found</h4>
+                    <p class="text-muted mb-4">
+                        No seasonal products match your current filters. Try adjusting your search criteria.
+                    </p>
+                    <a href="{{ url_for('seasonal_products') }}" class="btn btn-primary">
+                        View All Seasonal Products
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Seasonal products pagination">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('seasonal_products', page=products.prev_num, season=current_season, category=current_category, status=current_status, sort=current_sort) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in products.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != products.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('seasonal_products', page=page_num, season=current_season, category=current_category, status=current_status, sort=current_sort) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('seasonal_products', page=products.next_num, season=current_season, category=current_category, status=current_status, sort=current_sort) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.seasonal-header .gradient-text {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 80px;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filters-section {
+    border: 1px solid #e9ecef;
+}
+
+.product-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.product-image-container {
+    overflow: hidden;
+    position: relative;
+}
+
+.product-image {
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05);
+}
+
+/* Seasonal badges with different colors */
+.seasonal-badge-spring {
+    background: linear-gradient(45deg, #98d982, #69b74c);
+    color: white;
+}
+
+.seasonal-badge-summer {
+    background: linear-gradient(45deg, #ffb347, #ff8c42);
+    color: white;
+}
+
+.seasonal-badge-fall, .seasonal-badge-autumn {
+    background: linear-gradient(45deg, #d2691e, #a0522d);
+    color: white;
+}
+
+.seasonal-badge-winter {
+    background: linear-gradient(45deg, #87ceeb, #4682b4);
+    color: white;
+}
+
+.seasonal-badge-holiday {
+    background: linear-gradient(45deg, #dc143c, #8b0000);
+    color: white;
+}
+
+.seasonal-badge-christmas {
+    background: linear-gradient(45deg, #dc143c, #228b22);
+    color: white;
+}
+
+.seasonal-badge-valentine {
+    background: linear-gradient(45deg, #ff1493, #ff69b4);
+    color: white;
+}
+
+.seasonal-badge-halloween {
+    background: linear-gradient(45deg, #ff8c00, #4b0082);
+    color: white;
+}
+
+.seasonal-badge-default {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.z-index-1 {
+    z-index: 1;
+}
+
+.add-to-cart-form {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .seasonal-stats {
+        margin-top: 1rem;
+    }
+    
+    .seasonal-stats .d-flex {
+        justify-content: center;
+    }
+    
+    .stat-card {
+        min-width: 70px;
+        padding: 0.75rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterForm = document.getElementById('filters-form');
+    const selectElements = filterForm.querySelectorAll('select');
+    
+    selectElements.forEach(select => {
+        select.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+    
+    // Add to cart functionality
+    const addToCartForms = document.querySelectorAll('.add-to-cart-form');
+    addToCartForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
+            button.disabled = true;
+            
+            // Re-enable after a short delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 1000);
+        });
+    });
+});
+</script>
+{% endblock %}

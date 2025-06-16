@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Create Story - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="container-responsive">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+                <h1 class="mb-0 text-responsive">
+                    <i class="fas fa-clock me-2 text-warning"></i>
+                    Create Limited-Time Story
+                </h1>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-responsive">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Creation Form -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card slide-in-up">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>
+                        Story Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Title -->
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label required") }}
+                            {{ form.title(class="form-control touch-target", placeholder="Enter an engaging story title...") }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.title.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Content -->
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label") }}
+                            {{ form.content(class="form-control touch-target", rows="3", placeholder="Brief description or content for the story...") }}
+                            <div class="form-text">{{ form.content.description }}</div>
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.content.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Story Type and Priority Row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.story_type.label(class="form-label required") }}
+                                    {{ form.story_type(class="form-select touch-target") }}
+                                    {% if form.story_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.story_type.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.priority.label(class="form-label") }}
+                                    {{ form.priority(class="form-control touch-target", min="1", max="10") }}
+                                    <div class="form-text">{{ form.priority.description }}</div>
+                                    {% if form.priority.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.priority.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expiration Time -->
+                        <div class="mb-3">
+                            {{ form.expires_at.label(class="form-label required") }}
+                            {{ form.expires_at(class="form-control touch-target", type="datetime-local") }}
+                            <div class="form-text">{{ form.expires_at.description }}</div>
+                            {% if form.expires_at.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.expires_at.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            <div class="upload-zone" id="imageUploadZone">
+                                {{ form.image(class="form-control", style="display: none;") }}
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-image fa-2x mb-2 text-muted"></i>
+                                    <p class="mb-1">Click to upload story image</p>
+                                    <small class="text-muted">{{ form.image.description }}</small>
+                                </div>
+                                <div class="upload-preview" style="display: none;">
+                                    <img class="preview-image" src="" alt="Preview">
+                                    <button type="button" class="btn btn-sm btn-danger remove-image">
+                                        <i class="fas fa-times"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                            {% if form.image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.image.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Related Product -->
+                        <div class="mb-3">
+                            {{ form.product_id.label(class="form-label") }}
+                            {{ form.product_id(class="form-select touch-target") }}
+                            <div class="form-text">{{ form.product_id.description }}</div>
+                            {% if form.product_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.product_id.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary btn-lg touch-target">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Create Story
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default expiration time to 24 hours from now
+    const expiresInput = document.querySelector('input[name="expires_at"]');
+    if (expiresInput && !expiresInput.value) {
+        const now = new Date();
+        now.setHours(now.getHours() + 24);
+        expiresInput.value = now.toISOString().slice(0, 16);
+    }
+
+    // Image upload handling
+    const uploadZone = document.getElementById('imageUploadZone');
+    const fileInput = uploadZone.querySelector('input[type="file"]');
+    const placeholder = uploadZone.querySelector('.upload-placeholder');
+    const preview = uploadZone.querySelector('.upload-preview');
+    const previewImg = preview.querySelector('.preview-image');
+    const removeBtn = preview.querySelector('.remove-image');
+
+    uploadZone.addEventListener('click', function(e) {
+        if (e.target !== removeBtn && !removeBtn.contains(e.target)) {
+            fileInput.click();
+        }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                placeholder.style.display = 'none';
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.value = '';
+        placeholder.style.display = 'block';
+        preview.style.display = 'none';
+    });
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                fileInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Search{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-search me-2"></i>
+                Advanced Product Search
+            </h2>
+        </div>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="advanced-search-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="search-query" class="form-label">Search Term</label>
+                                <input type="text" class="form-control" id="search-query" placeholder="Product name, description, or category">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="category-filter" class="form-label">Category</label>
+                                <select class="form-select" id="category-filter">
+                                    <option value="">All Categories</option>
+                                    <option value="Blazers">Blazers</option>
+                                    <option value="Chinos">Chinos</option>
+                                    <option value="Shirts">Shirts</option>
+                                    <option value="Loafers">Loafers</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Books">Books</option>
+                                    <option value="Clothing">Clothing</option>
+                                    <option value="Home & Garden">Home & Garden</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="min-price" class="form-label">Min Price</label>
+                                <input type="number" class="form-control" id="min-price" placeholder="0" min="0" step="0.01">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="max-price" class="form-label">Max Price</label>
+                                <input type="number" class="form-control" id="max-price" placeholder="1000" min="0" step="0.01">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="sort-by" class="form-label">Sort By</label>
+                                <select class="form-select" id="sort-by">
+                                    <option value="relevance">Relevance</option>
+                                    <option value="price_low">Price: Low to High</option>
+                                    <option value="price_high">Price: High to Low</option>
+                                    <option value="newest">Newest First</option>
+                                    <option value="name">Name A-Z</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="in-stock-only">
+                                    <label class="form-check-label" for="in-stock-only">
+                                        In Stock Only
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search me-1"></i>
+                                    Search
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="clear-filters">
+                                    <i class="fas fa-times me-1"></i>
+                                    Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Results -->
+    <div class="row">
+        <div class="col-12">
+            <div id="search-results">
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Enter search criteria above to find products</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('advanced-search-form');
+    const clearButton = document.getElementById('clear-filters');
+    const resultsContainer = document.getElementById('search-results');
+    
+    // Search form submission
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        performSearch();
+    });
+    
+    // Clear filters
+    clearButton.addEventListener('click', function() {
+        searchForm.reset();
+        resultsContainer.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Enter search criteria above to find products</h4>
+            </div>
+        `;
+    });
+    
+    function performSearch() {
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams();
+        
+        // Build search parameters
+        const query = document.getElementById('search-query').value;
+        const category = document.getElementById('category-filter').value;
+        const minPrice = document.getElementById('min-price').value;
+        const maxPrice = document.getElementById('max-price').value;
+        const sortBy = document.getElementById('sort-by').value;
+        const inStockOnly = document.getElementById('in-stock-only').checked;
+        
+        if (query) params.append('q', query);
+        if (category) params.append('category', category);
+        if (minPrice) params.append('min_price', minPrice);
+        if (maxPrice) params.append('max_price', maxPrice);
+        if (sortBy) params.append('sort', sortBy);
+        if (inStockOnly) params.append('in_stock', 'true');
+        
+        // Show loading
+        resultsContainer.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="text-muted mt-3">Searching products...</h4>
+            </div>
+        `;
+        
+        // Perform search
+        fetch('/api/search/advanced?' + params.toString())
+            .then(response => response.json())
+            .then(data => {
+                displaySearchResults(data);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4 class="text-warning">Search Error</h4>
+                        <p>Please try again later.</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function displaySearchResults(data) {
+        if (data.products.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No products found</h4>
+                    <p>Try adjusting your search criteria.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Search Results</h4>
+                <span class="badge bg-primary">${data.total} products found</span>
+            </div>
+            <div class="row">
+        `;
+        
+        data.products.forEach(product => {
+            html += `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        ${product.image_url ? 
+                            `<img src="${product.image_url}" class="card-img-top" alt="${product.name}" style="height: 200px; object-fit: cover;">` :
+                            `<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>`
+                        }
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">${product.name}</h5>
+                            <p class="card-text text-muted small">${product.description}</p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="h5 text-primary mb-0 product-price" data-category="${product.category}">$${product.price.toFixed(2)}</span>
+                                    <span class="badge bg-secondary">${product.category}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="/product/${product.id}" class="btn btn-outline-primary btn-sm flex-fill">
+                                        <i class="fas fa-eye me-1"></i>
+                                        View
+                                    </a>
+                                    ${product.in_stock ? 
+                                        `<button class="btn btn-primary btn-sm wishlist-btn" data-product-id="${product.id}">
+                                            <i class="fas fa-heart"></i>
+                                        </button>` :
+                                        `<button class="btn btn-secondary btn-sm" disabled>
+                                            <i class="fas fa-times"></i>
+                                        </button>`
+                                    }
+                                </div>
+                                ${!product.in_stock ? '<small class="text-danger mt-1">Out of Stock</small>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        resultsContainer.innerHTML = html;
+        
+        // Initialize price comparison tooltips
+        if (typeof initializePriceTooltips === 'function') {
+            initializePriceTooltips();
+        }
+        
+        // Initialize wishlist buttons
+        initializeWishlistButtons();
+    }
+    
+    function initializeWishlistButtons() {
+        document.querySelectorAll('.wishlist-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                addToWishlist(productId);
+            });
+        });
+    }
+    
+    function addToWishlist(productId) {
+        fetch('/api/wishlist/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                product_id: productId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Added to wishlist!', 'success');
+            } else {
+                showNotification(data.message || 'Error adding to wishlist', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Wishlist error:', error);
+            showNotification('Error adding to wishlist', 'error');
+        });
+    }
+});
+</script>
+{% endblock %}

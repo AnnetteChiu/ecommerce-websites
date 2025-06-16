@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Set Username - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Choose Your Username</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Please enter a username to start creating and managing content. Your username will help identify your content and personalize your experience.</p>
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required
+                                   placeholder="Enter your username" maxlength="50">
+                            <div class="form-text">Choose a unique username that represents you.</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Continue
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

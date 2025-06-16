@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}{{ content.title }} - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <article class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1 class="h3 mb-2">{{ content.title }}</h1>
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-user me-1"></i>
+                                {{ content.author }}
+                                <span class="mx-2">|</span>
+                                <i class="fas fa-folder me-1"></i>
+                                {{ content.category }}
+                                <span class="mx-2">|</span>
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ content.created_at.strftime('%B %d, %Y at %H:%M') }}
+                                {% if content.updated_at != content.created_at %}
+                                    <br>
+                                    <i class="fas fa-edit me-1"></i>
+                                    Updated: {{ content.updated_at.strftime('%B %d, %Y at %H:%M') }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <span class="badge fs-6 
+                               {% if content.status == 'Published' %}bg-success
+                               {% elif content.status == 'Draft' %}bg-warning
+                               {% else %}bg-secondary{% endif %}">
+                        <i class="fas fa-{% if content.status == 'Published' %}check{% elif content.status == 'Draft' %}edit{% else %}archive{% endif %} me-1"></i>
+                        {{ content.status }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if content.image %}
+                    <div class="mb-4 text-center">
+                        <img src="{{ url_for('uploaded_file', filename=content.image) }}" 
+                             class="img-fluid rounded" 
+                             style="max-width: 100%; height: auto; max-height: 400px;" 
+                             alt="{{ content.title }}">
+                    </div>
+                {% endif %}
+                
+                {% if content.tags %}
+                    <div class="mb-4">
+                        <h6>Tags:</h6>
+                        {% for tag in content.tags %}
+                            <span class="badge bg-info me-1">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="content-body">
+                    {{ content.content|safe }}
+                </div>
+                
+                <!-- File Attachments Section -->
+                {% if content.files %}
+                    <div class="mt-4 pt-4 border-top">
+                        <h6 class="mb-3">
+                            <i class="fas fa-paperclip me-2"></i>
+                            Attached Files ({{ content.files|length }})
+                        </h6>
+                        <div class="row">
+                            {% for file in content.files %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center p-2 border rounded">
+                                        <i class="{{ file.get_file_icon() }} fa-lg text-primary me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-medium text-truncate" title="{{ file.original_filename }}">
+                                                {{ file.original_filename }}
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ file.file_type.title() }} • {{ file.get_file_size_formatted() }}
+                                            </small>
+                                        </div>
+                                        <a href="{{ url_for('download_file', file_id=file.id) }}" 
+                                           class="btn btn-sm btn-outline-primary ms-2">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('content_files', content_id=content.id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-folder-open me-1"></i>View All Files
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <i class="fas fa-clock me-1"></i>
+                        ID: {{ content.id }}
+                    </div>
+                    
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('edit_content', content_id=content.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-edit me-1"></i>
+                            Edit
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('detailed_ai_analysis', content_id=content.id) }}" class="btn btn-outline-info">
+                            <i class="fas fa-brain me-1"></i>
+                            AI Analysis
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-outline-danger" 
+                                onclick="confirmDelete({{ content.id }}, '{{ content.title }}')">
+                            <i class="fas fa-trash me-1"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Content Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Dashboard
+                    </a>
+                    
+                    <a href="{{ url_for('edit_content', content_id=content.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Content
+                    </a>
+                    
+                    <button type="button" class="btn btn-outline-secondary" onclick="shareContent()">
+                        <i class="fas fa-share me-2"></i>
+                        Share Content
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-success" onclick="duplicateContent()">
+                        <i class="fas fa-copy me-2"></i>
+                        Duplicate
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Statistics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Content Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="mb-0">{{ content.content|length }}</h4>
+                            <small class="text-muted">Characters</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="mb-0">{{ (content.content.split()|length) }}</h4>
+                        <small class="text-muted">Words</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="mb-0">{{ content.tags|length }}</h5>
+                            <small class="text-muted">Tags</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="mb-0">
+                            {% set days_old = (moment().date() - content.created_at.date()).days if moment else 0 %}
+                            {{ days_old if days_old >= 0 else 0 }}
+                        </h5>
+                        <small class="text-muted">Days Old</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Status Update -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Status Update
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-warning btn-sm
+                           {% if content.status == 'Draft' %}active{% endif %}"
+                            onclick="updateStatus('Draft')">
+                        Draft
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm
+                           {% if content.status == 'Published' %}active{% endif %}"
+                            onclick="updateStatus('Published')">
+                        Published
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm
+                           {% if content.status == 'Archived' %}active{% endif %}"
+                            onclick="updateStatus('Archived')">
+                        Archived
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Content -->
+        {% if recommendations %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-magic me-2"></i>
+                    Recommended for You
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for rec in recommendations %}
+                    <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <h6 class="mb-1">
+                            <a href="{{ url_for('view_content', content_id=rec.content.id) }}" class="text-decoration-none">
+                                {{ rec.content.title }}
+                            </a>
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-folder me-1"></i>{{ rec.content.category }} •
+                            <i class="fas fa-user me-1"></i>{{ rec.content.author }} •
+                            {% if rec.hybrid_score is defined %}
+                                <span class="badge bg-primary">{{ (rec.hybrid_score * 100)|round }}% hybrid</span>
+                                {% if rec.cf_score > 0 %}
+                                    <span class="badge bg-success badge-sm">CF: {{ (rec.cf_score * 100)|round }}%</span>
+                                {% endif %}
+                                {% if rec.content_score > 0 %}
+                                    <span class="badge bg-info badge-sm">Content: {{ (rec.content_score * 100)|round }}%</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-info">{{ (rec.similarity * 100)|round }}% match</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Category Suggestions -->
+        {% if category_suggestions %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-layer-group me-2"></i>
+                    More in {{ content.category }}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for suggestion in category_suggestions %}
+                    <div class="mb-2">
+                        <a href="{{ url_for('view_content', content_id=suggestion.id) }}" class="text-decoration-none">
+                            {{ suggestion.title }}
+                        </a>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>{{ suggestion.author }} •
+                            <i class="fas fa-calendar me-1"></i>{{ suggestion.created_at.strftime('%b %d, %Y') }}
+                        </small>
+                    </div>
+                    {% if not loop.last %}<hr class="my-2">{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteContentTitle"></strong>?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>
+                        Delete Content
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Content</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="shareUrl" class="form-label">Content URL</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="shareUrl" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(contentId, contentTitle) {
+    document.getElementById('deleteContentTitle').textContent = contentTitle;
+    document.getElementById('deleteForm').action = `/delete/${contentId}`;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+function shareContent() {
+    const shareUrl = window.location.href;
+    document.getElementById('shareUrl').value = shareUrl;
+    
+    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    shareModal.show();
+}
+
+function copyToClipboard() {
+    const shareUrl = document.getElementById('shareUrl');
+    shareUrl.select();
+    document.execCommand('copy');
+    
+    // Show temporary feedback
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHtml;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 1000);
+}
+
+function updateStatus(newStatus) {
+    fetch(`/api/content/{{ content.id }}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({status: newStatus})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
+        alert('Failed to update status. Please try again.');
+    });
+}
+
+function duplicateContent() {
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = '{{ url_for("create_content") }}';
+    
+    // Add content data as hidden fields for duplication
+    const fields = {
+        'duplicate_title': '{{ content.title }} (Copy)',
+        'duplicate_content': `{{ content.content|replace('\n', '\\n')|replace('"', '\\"') }}`,
+        'duplicate_category': '{{ content.category }}',
+        'duplicate_author': '{{ content.author }}',
+        'duplicate_tags': '{{ content.tags|join(", ") }}'
+    };
+    
+    for (const [name, value] of Object.entries(fields)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

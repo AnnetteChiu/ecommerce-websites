@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Shop - Products{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-5 fw-bold">
+                    <i class="fas fa-store me-3 text-primary"></i>
+                    Shop
+                </h1>
+                {% if current_user.is_authenticated %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('cart') }}" class="btn btn-outline-success">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Cart ({{ cart_count }})
+                    </a>
+                    <a href="{{ url_for('create_product') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Sell Product
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="Search products..." value="{{ search_query }}">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}" {% if category == current_category %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personalized Recommendations -->
+    {% if current_user.is_authenticated and recommendations %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="recommendation-section">
+                <!-- Header with enhanced styling -->
+                <div class="recommendation-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="mb-1">
+                            <i class="fas fa-sparkles me-2 text-warning"></i>
+                            <span class="gradient-text">Recommended For You</span>
+                        </h4>
+                        <p class="text-muted mb-0">Curated picks based on your preferences</p>
+                    </div>
+                    <div class="recommendation-controls">
+                        <button class="btn btn-outline-secondary btn-sm me-2" id="refresh-recommendations">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Refresh
+                        </button>
+                        <span class="badge bg-primary">{{ recommendations|length }} items</span>
+                    </div>
+                </div>
+
+                <!-- Recommendations Grid -->
+                <div class="recommendations-grid">
+                    {% for rec in recommendations %}
+                    <div class="recommendation-item" data-product-id="{{ rec.product.id }}">
+                        <div class="card h-100 shadow-sm border-0 recommendation-card">
+                            <!-- Product Image with Overlay -->
+                            <div class="product-image-container position-relative">
+                                {% if rec.product.image_url %}
+                                <img src="{{ rec.product.image_url }}" class="card-img-top" alt="{{ rec.product.name }}" 
+                                     style="height: 180px; object-fit: cover;">
+                                {% else %}
+                                <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" 
+                                     style="height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <i class="fas fa-image fa-3x text-white opacity-50"></i>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Quick Action Overlay -->
+                                <div class="product-overlay">
+                                    <div class="overlay-actions">
+                                        <button class="btn btn-sm btn-primary me-2 quick-view-btn" 
+                                                data-product-id="{{ rec.product.id }}" title="Quick View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-light wishlist-btn" 
+                                                data-product-id="{{ rec.product.id }}" title="Add to Wishlist">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendation Badge -->
+                                <div class="recommendation-badge">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-thumbs-up me-1"></i>
+                                        {{ rec.score }}% Match
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Product Details -->
+                            <div class="card-body d-flex flex-column p-3">
+                                <div class="product-info">
+                                    <h6 class="card-title mb-2 fw-bold">{{ rec.product.name }}</h6>
+                                    <div class="recommendation-reason mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            {{ rec.reason }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Price and Category -->
+                                <div class="product-meta d-flex justify-content-between align-items-center mb-3">
+                                    <span class="h6 text-primary mb-0 product-price fw-bold" 
+                                          data-category="{{ rec.product.category }}">
+                                        ${{ "%.2f"|format(rec.product.price) }}
+                                    </span>
+                                    <span class="badge bg-light text-dark border">{{ rec.product.category }}</span>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="product-actions mt-auto">
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('product_detail', product_id=rec.product.id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-shopping-bag me-1"></i>
+                                            View Details
+                                        </a>
+                                        {% if rec.product.is_digital or rec.product.stock_quantity > 0 %}
+                                        <button class="btn btn-outline-primary btn-sm quick-add-btn" 
+                                                data-product-id="{{ rec.product.id }}">
+                                            <i class="fas fa-cart-plus me-1"></i>
+                                            Quick Add
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                                            <i class="fas fa-times me-1"></i>
+                                            Out of Stock
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- View More Recommendations -->
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('personalized_recommendations') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        View All Recommendations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Products Grid -->
+    <div class="row">
+        {% if products.items %}
+            {% for product in products.items %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 product-card">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" 
+                         style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 200px;">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title product-title mb-2">
+                            <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                               class="text-decoration-none text-dark product-title-link">
+                                {{ product.name }}
+                            </a>
+                        </h5>
+                        <p class="card-text text-muted small mb-3">{{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}</p>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h4 text-primary mb-0 product-price" data-category="{{ product.category }}">${{ "%.2f"|format(product.price) }}</span>
+                                <span class="badge bg-secondary product-category">{{ product.category }}</span>
+                            </div>
+                            
+                            {% if not product.is_digital and product.stock_quantity <= 0 %}
+                            <span class="text-danger small">Out of Stock</span>
+                            {% elif not product.is_digital %}
+                            <span class="text-success small">{{ product.stock_quantity }} in stock</span>
+                            {% else %}
+                            <span class="text-info small">Digital Product</span>
+                            {% endif %}
+                            
+                            <div class="d-grid mt-2">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                                   class="btn btn-outline-enhanced btn-outline-primary">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No products found</h4>
+                    <p class="text-muted">Try adjusting your search criteria or browse all products.</p>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('create_product') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add First Product
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Product pagination">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('shop', page=products.prev_num, 
+                           category=current_category, search=search_query) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in products.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != products.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('shop', page=page_num, 
+                                   category=current_category, search=search_query) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('shop', page=products.next_num, 
+                           category=current_category, search=search_query) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

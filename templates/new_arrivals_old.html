@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}New Arrivals{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="new-arrivals-header">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="gradient-text mb-2">
+                            <i class="fas fa-sparkles me-2"></i>
+                            New Arrivals
+                        </h1>
+                        <p class="text-muted mb-0">Discover the latest products added to our store</p>
+                    </div>
+                    <div class="new-arrivals-stats">
+                        <div class="d-flex gap-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ today_count }}</div>
+                                <div class="stat-label">Today</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ week_count }}</div>
+                                <div class="stat-label">This Week</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ total_new }}</div>
+                                <div class="stat-label">Total New</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Sorting -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filters-section bg-light rounded p-3">
+                <form method="GET" id="filters-form" class="row g-3 align-items-end">
+                    <!-- Category Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">{{ t('Category') }}</label>
+                        <select name="category" class="form-select">
+                            <option value="">{{ t('All Categories') }}</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>
+                                {{ t(cat) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Days Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">{{ t('Added Within') }}</label>
+                        <select name="days" class="form-select">
+                            <option value="7" {% if current_days == 7 %}selected{% endif %}>{{ t('Last 7 days') }}</option>
+                            <option value="14" {% if current_days == 14 %}selected{% endif %}>{{ t('Last 2 weeks') }}</option>
+                            <option value="30" {% if current_days == 30 %}selected{% endif %}>{{ t('Last 30 days') }}</option>
+                            <option value="90" {% if current_days == 90 %}selected{% endif %}>{{ t('Last 3 months') }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">{{ t('Sort By') }}</label>
+                        <select name="sort" class="form-select">
+                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>
+                                {{ t('Newest First') }}
+                            </option>
+                            <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>
+                                {{ t('Price: Low to High') }}
+                            </option>
+                            <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>
+                                {{ t('Price: High to Low') }}
+                            </option>
+                            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>
+                                {{ t('Name A-Z') }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Apply Button -->
+                    <div class="col-md-3">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-filter me-1"></i>
+                                {{ t('Apply Filters') }}
+                            </button>
+                            <a href="{{ url_for('new_arrivals') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <p class="text-muted mb-0">
+                    {{ t('Showing') }} {{ products.items|length }} {{ t('of') }} {{ products.total }} {{ t('new arrivals') }}
+                    {% if current_category %}
+                        {{ t('in') }} <strong>{{ t(current_category) }}</strong>
+                    {% endif %}
+                </p>
+                
+                <div class="view-toggle">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row" id="products-container">
+        {% if products.items %}
+            {% for product in products.items %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-item">
+                <div class="card h-100 product-card position-relative">
+                    <!-- New Arrival Badge -->
+                    <div class="new-arrival-badge">
+                        <span class="badge bg-success">
+                            <i class="fas fa-star me-1"></i>
+                            {{ t('New') }}
+                        </span>
+                        {% if product.days_since_created <= 1 %}
+                        <span class="badge bg-warning ms-1">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ t('Today') }}
+                        </span>
+                        {% elif product.days_since_created <= 7 %}
+                        <span class="badge bg-info ms-1">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ product.days_since_created }}d
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Image -->
+                    <div class="product-image-container position-relative">
+                        {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" 
+                             style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="placeholder-image d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Hover Overlay -->
+                        <div class="product-overlay">
+                            <div class="overlay-actions">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if current_user.is_authenticated %}
+                                <button class="btn btn-light btn-sm wishlist-btn" 
+                                        data-product-id="{{ product.id }}">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="card-body d-flex flex-column">
+                        <div class="product-info flex-grow-1">
+                            <h6 class="card-title mb-2">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ product.name }}
+                                </a>
+                            </h6>
+                            <p class="card-text text-muted small mb-2">
+                                {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+                            </p>
+                            <span class="badge bg-secondary mb-2">{{ t(product.category) }}</span>
+                        </div>
+
+                        <!-- Product Meta -->
+                        <div class="product-meta">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-primary mb-0 product-price" data-category="{{ product.category }}">
+                                    ${{ "%.2f"|format(product.price) }}
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-plus me-1"></i>
+                                    {{ product.created_at.strftime('%m/%d') }}
+                                </small>
+                            </div>
+                            
+                            <!-- Stock Status -->
+                            {% if product.is_digital %}
+                            <div class="stock-status mb-2">
+                                <span class="badge bg-info">
+                                    <i class="fas fa-download me-1"></i>
+                                    {{ t('Digital Product') }}
+                                </span>
+                            </div>
+                            {% elif product.stock_quantity > 0 %}
+                            <div class="stock-status mb-2">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>
+                                    {{ t('In Stock') }} ({{ product.stock_quantity }})
+                                </span>
+                            </div>
+                            {% else %}
+                            <div class="stock-status mb-2">
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>
+                                    {{ t('Out of Stock') }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        {% if current_user.is_authenticated %}
+                        <div class="product-actions d-grid gap-2">
+                            {% if product.stock_quantity > 0 or product.is_digital %}
+                            <button class="btn btn-primary btn-sm quick-add-btn" 
+                                    data-product-id="{{ product.id }}">
+                                <i class="fas fa-cart-plus me-1"></i>
+                                {{ t('Add to Cart') }}
+                            </button>
+                            {% else %}
+                            <button class="btn btn-outline-secondary btn-sm" disabled>
+                                <i class="fas fa-times me-1"></i>
+                                {{ t('Out of Stock') }}
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="product-actions">
+                            <small class="text-muted text-center d-block">
+                                <a href="{{ url_for('replit_auth.login') }}">{{ t('Login') }}</a> {{ t('to purchase') }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="empty-state text-center py-5">
+                <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted mb-2">{{ t('No New Arrivals Found') }}</h4>
+                <p class="text-muted mb-3">
+                    {{ t('No products match your current filters. Try adjusting your search criteria.') }}
+                </p>
+                <a href="{{ url_for('new_arrivals') }}" class="btn btn-primary">
+                    <i class="fas fa-refresh me-1"></i>
+                    {{ t('View All New Arrivals') }}
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="New arrivals pagination">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('new_arrivals', page=products.prev_num, 
+                            category=current_category, sort=current_sort, days=current_days) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in products.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != products.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('new_arrivals', page=page_num, 
+                                    category=current_category, sort=current_sort, days=current_days) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('new_arrivals', page=products.next_num, 
+                            category=current_category, sort=current_sort, days=current_days) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.new-arrivals-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 80px;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.new-arrival-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+}
+
+.placeholder-image {
+    height: 200px;
+    border-radius: 8px 8px 0 0;
+}
+
+.product-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.empty-state {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    margin: 2rem 0;
+}
+
+.filters-section {
+    border: 1px solid #e9ecef;
+}
+
+.view-toggle .btn {
+    border-radius: 6px;
+}
+
+.view-toggle .btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit filters on change
+    const filterForm = document.getElementById('filters-form');
+    const selects = filterForm.querySelectorAll('select');
+    
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+    
+    // View toggle (placeholder for future implementation)
+    const viewButtons = document.querySelectorAll('[data-view]');
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            viewButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const view = this.dataset.view;
+            const container = document.getElementById('products-container');
+            
+            if (view === 'list') {
+                container.classList.add('list-view');
+            } else {
+                container.classList.remove('list-view');
+            }
+        });
+    });
+    
+    // Initialize other features
+    if (typeof initializePriceTooltips === 'function') {
+        initializePriceTooltips();
+    }
+    
+    if (typeof initializeWishlistButtons === 'function') {
+        initializeWishlistButtons();
+    }
+    
+    if (typeof initializeQuickAddButtons === 'function') {
+        initializeQuickAddButtons();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}Trading View - Content Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        Content Trading Analytics
+                    </h2>
+                    <p class="text-muted mb-0">Real-time content performance metrics and insights</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" id="refreshData">
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Refresh
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-clock me-1"></i>
+                            Time Range
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-range="24h">Last 24 Hours</a></li>
+                            <li><a class="dropdown-item" href="#" data-range="7d">Last 7 Days</a></li>
+                            <li><a class="dropdown-item" href="#" data-range="30d">Last 30 Days</a></li>
+                            <li><a class="dropdown-item" href="#" data-range="all">All Time</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <i class="fas fa-file-alt fa-2x text-primary"></i>
+                        <span class="badge bg-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            +12%
+                        </span>
+                    </div>
+                    <h4 class="mb-1" id="totalContent">{{ total_content }}</h4>
+                    <p class="text-muted mb-0">Total Content</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <i class="fas fa-eye fa-2x text-info"></i>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-arrow-down me-1"></i>
+                            -3%
+                        </span>
+                    </div>
+                    <h4 class="mb-1" id="totalViews">{{ total_views }}</h4>
+                    <p class="text-muted mb-0">Total Views</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <i class="fas fa-users fa-2x text-success"></i>
+                        <span class="badge bg-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            +8%
+                        </span>
+                    </div>
+                    <h4 class="mb-1" id="activeUsers">{{ active_users }}</h4>
+                    <p class="text-muted mb-0">Active Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <i class="fas fa-chart-bar fa-2x text-warning"></i>
+                        <span class="badge bg-info">
+                            <i class="fas fa-minus me-1"></i>
+                            0%
+                        </span>
+                    </div>
+                    <h4 class="mb-1" id="engagementRate">{{ engagement_rate }}%</h4>
+                    <p class="text-muted mb-0">Engagement Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Content Performance Over Time
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-chart="views">Views</button>
+                            <button type="button" class="btn btn-outline-primary" data-chart="interactions">Interactions</button>
+                            <button type="button" class="btn btn-outline-primary" data-chart="users">Users</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" width="800" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-pie-chart me-2"></i>
+                        Content Categories
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performing Content -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        Top Performing Content
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Content</th>
+                                    <th>Views</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topContentTable">
+                                {% for content in top_content %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-{{ content.status|lower == 'published' and 'success' or 'warning' }} me-2">
+                                                {{ content.status }}
+                                            </span>
+                                            <span>{{ content.title[:30] }}{% if content.title|length > 30 %}...{% endif %}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ content.view_count|default(0) }}</td>
+                                    <td>
+                                        <span class="text-success">
+                                            <i class="fas fa-arrow-up"></i>
+                                            +{{ (loop.index0 * 5 + 2) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-fire me-2"></i>
+                        Trending Topics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="trending-topics">
+                        {% for tag in trending_tags %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                                <span class="fw-bold">{{ tag.name }}</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">{{ tag.count }} mentions</div>
+                                <div class="progress" style="width: 80px; height: 4px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: {{ (tag.count / trending_tags[0].count * 100) if trending_tags else 0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Activity Feed -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-stream me-2"></i>
+                            Live Activity Feed
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-circle fa-xs"></i>
+                                Live
+                            </span>
+                        </h5>
+                        <button class="btn btn-outline-secondary btn-sm" id="pauseFeed">
+                            <i class="fas fa-pause me-1"></i>
+                            Pause
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="activityFeed" class="activity-feed" style="max-height: 300px; overflow-y: auto;">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item d-flex align-items-center mb-3 p-2 rounded bg-light">
+                            <div class="activity-icon me-3">
+                                {% if activity.type == 'view' %}
+                                    <i class="fas fa-eye text-info"></i>
+                                {% elif activity.type == 'edit' %}
+                                    <i class="fas fa-edit text-warning"></i>
+                                {% elif activity.type == 'create' %}
+                                    <i class="fas fa-plus text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-activity text-primary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content flex-grow-1">
+                                <div class="activity-description">
+                                    <strong>{{ activity.user_name|default('Anonymous') }}</strong>
+                                    {{ activity.action }}
+                                    <strong>"{{ activity.content_title[:40] }}{% if activity.content_title|length > 40 %}...{% endif %}"</strong>
+                                </div>
+                                <div class="activity-time text-muted small">
+                                    {{ activity.timestamp.strftime('%H:%M:%S') }}
+                                </div>
+                            </div>
+                            <div class="activity-badge">
+                                <span class="badge bg-secondary">{{ activity.type }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trading View Styles -->
+<style>
+.trading-metric {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.trading-metric::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%);
+    background-size: 20px 20px;
+    animation: trading-pattern 2s linear infinite;
+}
+
+@keyframes trading-pattern {
+    0% { transform: translateX(-20px); }
+    100% { transform: translateX(0); }
+}
+
+.activity-feed {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.activity-item {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.activity-item:hover {
+    border-left-color: #007bff;
+    transform: translateX(5px);
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15)!important;
+}
+
+.badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.progress-bar {
+    animation: growBar 1s ease-out;
+}
+
+@keyframes growBar {
+    from { width: 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- Chart.js Integration -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initializePerformanceChart();
+    initializeCategoryChart();
+    initializeRealTimeUpdates();
+    
+    // Chart switching
+    document.querySelectorAll('[data-chart]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-chart]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updatePerformanceChart(this.dataset.chart);
+        });
+    });
+    
+    // Refresh data
+    document.getElementById('refreshData').addEventListener('click', refreshAllData);
+    
+    // Time range selection
+    document.querySelectorAll('[data-range]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            updateTimeRange(this.dataset.range);
+        });
+    });
+});
+
+function initializePerformanceChart() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    // Generate sample data
+    const labels = [];
+    const data = [];
+    const now = new Date();
+    
+    for (let i = 23; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+        labels.push(time.getHours() + ':00');
+        data.push(Math.floor(Math.random() * 100) + 50);
+    }
+    
+    window.performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Views',
+                data: data,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+}
+
+function initializeCategoryChart() {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    
+    window.categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Blog Posts', 'News Articles', 'Tutorials', 'Reviews', 'Other'],
+            datasets: [{
+                data: [30, 25, 20, 15, 10],
+                backgroundColor: [
+                    '#007bff',
+                    '#28a745',
+                    '#ffc107',
+                    '#dc3545',
+                    '#6c757d'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updatePerformanceChart(type) {
+    if (!window.performanceChart) return;
+    
+    // Generate different data based on type
+    const data = [];
+    for (let i = 0; i < 24; i++) {
+        switch(type) {
+            case 'views':
+                data.push(Math.floor(Math.random() * 100) + 50);
+                break;
+            case 'interactions':
+                data.push(Math.floor(Math.random() * 50) + 10);
+                break;
+            case 'users':
+                data.push(Math.floor(Math.random() * 30) + 5);
+                break;
+        }
+    }
+    
+    window.performanceChart.data.datasets[0].data = data;
+    window.performanceChart.data.datasets[0].label = type.charAt(0).toUpperCase() + type.slice(1);
+    window.performanceChart.update();
+}
+
+function initializeRealTimeUpdates() {
+    // Simulate real-time updates
+    setInterval(() => {
+        if (!document.getElementById('pauseFeed').classList.contains('paused')) {
+            addNewActivityItem();
+        }
+    }, 5000);
+    
+    // Pause/resume feed
+    document.getElementById('pauseFeed').addEventListener('click', function() {
+        this.classList.toggle('paused');
+        const icon = this.querySelector('i');
+        const text = this.querySelector('span') || this;
+        
+        if (this.classList.contains('paused')) {
+            icon.className = 'fas fa-play me-1';
+            text.textContent = ' Resume';
+        } else {
+            icon.className = 'fas fa-pause me-1';
+            text.textContent = ' Pause';
+        }
+    });
+}
+
+function addNewActivityItem() {
+    const feed = document.getElementById('activityFeed');
+    const actions = ['viewed', 'edited', 'created', 'shared'];
+    const users = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson'];
+    const contents = ['Advanced Trading Strategies', 'Market Analysis Report', 'Investment Guide', 'Portfolio Review'];
+    
+    const activity = document.createElement('div');
+    activity.className = 'activity-item d-flex align-items-center mb-3 p-2 rounded bg-light';
+    activity.style.opacity = '0';
+    activity.style.transform = 'translateX(-20px)';
+    
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const user = users[Math.floor(Math.random() * users.length)];
+    const content = contents[Math.floor(Math.random() * contents.length)];
+    const now = new Date();
+    
+    activity.innerHTML = `
+        <div class="activity-icon me-3">
+            <i class="fas fa-eye text-info"></i>
+        </div>
+        <div class="activity-content flex-grow-1">
+            <div class="activity-description">
+                <strong>${user}</strong> ${action} <strong>"${content}"</strong>
+            </div>
+            <div class="activity-time text-muted small">
+                ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}
+            </div>
+        </div>
+        <div class="activity-badge">
+            <span class="badge bg-secondary">${action}</span>
+        </div>
+    `;
+    
+    feed.insertBefore(activity, feed.firstChild);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        activity.style.transition = 'all 0.3s ease';
+        activity.style.opacity = '1';
+        activity.style.transform = 'translateX(0)';
+    });
+    
+    // Remove old items (keep last 10)
+    const items = feed.querySelectorAll('.activity-item');
+    if (items.length > 10) {
+        items[items.length - 1].remove();
+    }
+}
+
+function refreshAllData() {
+    const btn = document.getElementById('refreshData');
+    const icon = btn.querySelector('i');
+    
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        // Simulate data refresh
+        updatePerformanceChart('views');
+        
+        // Update metrics with animation
+        animateValue('totalContent', parseInt(document.getElementById('totalContent').textContent), Math.floor(Math.random() * 50) + 100);
+        animateValue('totalViews', parseInt(document.getElementById('totalViews').textContent), Math.floor(Math.random() * 1000) + 2000);
+        animateValue('activeUsers', parseInt(document.getElementById('activeUsers').textContent), Math.floor(Math.random() * 100) + 150);
+        
+        icon.classList.remove('fa-spin');
+        btn.disabled = false;
+    }, 1000);
+}
+
+function animateValue(id, start, end) {
+    const element = document.getElementById(id);
+    const duration = 1000;
+    const increment = (end - start) / (duration / 16);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+    }, 16);
+}
+
+function updateTimeRange(range) {
+    console.log('Updating time range to:', range);
+    // Here you would fetch new data based on the time range
+    refreshAllData();
+}
+</script>
+{% endblock %}

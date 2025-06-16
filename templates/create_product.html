@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit Product{% else %}Create Product{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        {% if is_edit %}
+                        <i class="fas fa-edit me-2 text-primary"></i>
+                        Edit Product
+                        {% else %}
+                        <i class="fas fa-plus-circle me-2 text-primary"></i>
+                        Create New Product
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.price.label(class="form-label") }}
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.price(class="form-control") }}
+                                    </div>
+                                    {% if form.price.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.price.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.category.label(class="form-label") }}
+                                    {{ form.category(class="form-select") }}
+                                    {% if form.category.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.category.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.stock_quantity.label(class="form-label") }}
+                                    {{ form.stock_quantity(class="form-control") }}
+                                    {% if form.stock_quantity.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.stock_quantity.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_digital(class="form-check-input") }}
+                                {{ form.is_digital.label(class="form-check-label") }}
+                            </div>
+                            <small class="text-muted">Digital products don't require stock management</small>
+                        </div>
+
+                        <!-- Seasonal Product Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-snowflake me-2"></i>
+                                    Seasonal Availability
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_seasonal(class="form-check-input", id="is_seasonal") }}
+                                        {{ form.is_seasonal.label(class="form-check-label") }}
+                                    </div>
+                                    <small class="text-muted">{{ form.is_seasonal.description }}</small>
+                                </div>
+
+                                <div id="seasonal-fields" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                {{ form.season_type.label(class="form-label") }}
+                                                {{ form.season_type(class="form-select") }}
+                                                <small class="text-muted">{{ form.season_type.description }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                {{ form.seasonal_year.label(class="form-label") }}
+                                                {{ form.seasonal_year(class="form-control", placeholder="e.g., 2024") }}
+                                                <small class="text-muted">{{ form.seasonal_year.description }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                {{ form.seasonal_start.label(class="form-label") }}
+                                                {{ form.seasonal_start(class="form-control", type="datetime-local") }}
+                                                <small class="text-muted">{{ form.seasonal_start.description }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                {{ form.seasonal_end.label(class="form-label") }}
+                                                {{ form.seasonal_end(class="form-control", type="datetime-local") }}
+                                                <small class="text-muted">{{ form.seasonal_end.description }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>How it works:</strong> You can either select a season type (which uses predefined months) 
+                                            or set specific start/end dates. If both are provided, the dates take priority.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control") }}
+                            {% if form.image.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.image.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            {% if is_edit %}
+                            <a href="{{ url_for('my_products') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to My Products
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('shop') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Shop
+                            </a>
+                            {% endif %}
+                            {% if is_edit %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Product
+                            </button>
+                            {% else %}
+                            {{ form.submit(class="btn btn-primary") }}
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isDigitalCheckbox = document.getElementById('is_digital');
+    const isSeasonalCheckbox = document.getElementById('is_seasonal');
+    const seasonalFields = document.getElementById('seasonal-fields');
+    const stockQuantityGroup = document.querySelector('[for="stock_quantity"]').closest('.mb-3');
+    
+    // Show/hide stock quantity based on digital product checkbox
+    function toggleStockQuantity() {
+        if (isDigitalCheckbox.checked) {
+            stockQuantityGroup.style.display = 'none';
+            document.getElementById('stock_quantity').value = '0';
+        } else {
+            stockQuantityGroup.style.display = 'block';
+        }
+    }
+    
+    // Show/hide seasonal fields based on seasonal product checkbox
+    function toggleSeasonalFields() {
+        const seasonalInputs = ['season_type', 'seasonal_start', 'seasonal_end', 'seasonal_year'];
+        
+        if (isSeasonalCheckbox.checked) {
+            seasonalFields.style.display = 'block';
+            // Enable seasonal fields when showing
+            seasonalInputs.forEach(function(inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.disabled = false;
+                }
+            });
+        } else {
+            seasonalFields.style.display = 'none';
+            // Clear and disable seasonal fields when hiding
+            seasonalInputs.forEach(function(inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.value = '';
+                    input.disabled = true;
+                }
+            });
+        }
+    }
+    
+    // Handle form submission to properly handle disabled fields
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!isSeasonalCheckbox.checked) {
+            // Re-enable seasonal fields temporarily and clear them to ensure proper submission
+            const seasonalInputs = ['seasonal_start', 'seasonal_end', 'seasonal_year'];
+            seasonalInputs.forEach(function(inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.disabled = false;
+                    input.value = '';
+                }
+            });
+        }
+    });
+    
+    isDigitalCheckbox.addEventListener('change', toggleStockQuantity);
+    isSeasonalCheckbox.addEventListener('change', function() {
+        console.log('Seasonal checkbox changed:', isSeasonalCheckbox.checked);
+        toggleSeasonalFields();
+    });
+    
+    // Run on page load
+    toggleStockQuantity();
+    toggleSeasonalFields();
+    
+    // For edit mode, check if seasonal fields should be enabled based on existing data
+    {% if is_edit and product and product.is_seasonal %}
+    if (isSeasonalCheckbox && !isSeasonalCheckbox.checked) {
+        isSeasonalCheckbox.checked = true;
+        toggleSeasonalFields();
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

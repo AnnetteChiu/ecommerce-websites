@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}File Manager - Dynamic Content Manager{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-folder-open me-2"></i>My Files</h2>
+                <div>
+                    <a href="{{ url_for('bulk_upload') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-upload me-1"></i>Bulk Upload
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Storage Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                            <h5 class="card-title">{{ total_files }}</h5>
+                            <p class="card-text text-muted">Total Files</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-hdd fa-2x text-success mb-2"></i>
+                            <h5 class="card-title">
+                                {% if total_size < 1024 %}
+                                    {{ total_size }} B
+                                {% elif total_size < 1024*1024 %}
+                                    {{ "%.1f"|format(total_size/1024) }} KB
+                                {% elif total_size < 1024*1024*1024 %}
+                                    {{ "%.1f"|format(total_size/(1024*1024)) }} MB
+                                {% else %}
+                                    {{ "%.1f"|format(total_size/(1024*1024*1024)) }} GB
+                                {% endif %}
+                            </h5>
+                            <p class="card-text text-muted">Storage Used</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-layer-group fa-2x text-info mb-2"></i>
+                            <h5 class="card-title">
+                                {% set type_count = 0 %}
+                                {% for type_name, files in files_by_type.items() %}
+                                    {% if files %}
+                                        {% set type_count = type_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ type_count }}
+                            </h5>
+                            <p class="card-text text-muted">File Types</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Categories -->
+            {% for type_name, files in files_by_type.items() %}
+                {% if files %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                {% if type_name == 'image' %}
+                                    <i class="fas fa-image me-2"></i>Images
+                                {% elif type_name == 'document' %}
+                                    <i class="fas fa-file-alt me-2"></i>Documents
+                                {% elif type_name == 'video' %}
+                                    <i class="fas fa-video me-2"></i>Videos
+                                {% elif type_name == 'audio' %}
+                                    <i class="fas fa-music me-2"></i>Audio
+                                {% elif type_name == 'archive' %}
+                                    <i class="fas fa-file-archive me-2"></i>Archives
+                                {% else %}
+                                    <i class="fas fa-file me-2"></i>Other Files
+                                {% endif %}
+                                ({{ files|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for file in files %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="{{ file.get_file_icon() }} fa-lg text-primary me-3"></i>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="card-title mb-1 text-truncate" title="{{ file.original_filename }}">
+                                                            {{ file.original_filename }}
+                                                        </h6>
+                                                        <small class="text-muted">{{ file.get_file_size_formatted() }}</small>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-2">
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        {{ file.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                                    </small>
+                                                    {% if file.content_id %}
+                                                        <small class="text-muted d-block">
+                                                            <i class="fas fa-link me-1"></i>
+                                                            <a href="{{ url_for('view_content', content_id=file.content_id) }}" class="text-decoration-none">
+                                                                Attached to content
+                                                            </a>
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div class="d-grid gap-1">
+                                                    <a href="{{ url_for('download_file', file_id=file.id) }}" 
+                                                       class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-download me-1"></i>Download
+                                                    </a>
+                                                    
+                                                    {% if file.file_type == 'image' %}
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                                data-bs-toggle="modal" data-bs-target="#imageModal{{ file.id }}">
+                                                            <i class="fas fa-eye me-1"></i>Preview
+                                                        </button>
+                                                    {% endif %}
+                                                    
+                                                    <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}" 
+                                                          onsubmit="return confirm('Are you sure you want to delete this file?')" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                                            <i class="fas fa-trash me-1"></i>Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Image Preview Modal -->
+                                    {% if file.file_type == 'image' %}
+                                        <div class="modal fade" id="imageModal{{ file.id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-lg">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">{{ file.original_filename }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body text-center">
+                                                        <img src="{{ url_for('uploaded_file', filename=file.filename) }}" 
+                                                             class="img-fluid" alt="{{ file.original_filename }}">
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <div class="me-auto">
+                                                            <small class="text-muted">
+                                                                {{ file.get_file_size_formatted() }} • 
+                                                                {{ file.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                                            </small>
+                                                        </div>
+                                                        <a href="{{ url_for('download_file', file_id=file.id) }}" 
+                                                           class="btn btn-primary">
+                                                            <i class="fas fa-download me-1"></i>Download
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {% if total_files == 0 %}
+                <div class="text-center py-5">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Files Yet</h4>
+                    <p class="text-muted">Upload files by creating or editing content.</p>
+                    <a href="{{ url_for('create_content') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create Content
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

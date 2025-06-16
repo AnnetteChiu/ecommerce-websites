@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}New Arrivals{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="new-arrivals-header">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="gradient-text mb-2">
+                            <i class="fas fa-sparkles me-2"></i>
+                            New Arrivals
+                        </h1>
+                        <p class="text-muted mb-0">Discover the latest products added to our store</p>
+                    </div>
+                    <div class="new-arrivals-stats">
+                        <div class="d-flex gap-3">
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ today_count }}</div>
+                                <div class="stat-label">Today</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ week_count }}</div>
+                                <div class="stat-label">This Week</div>
+                            </div>
+                            <div class="stat-card text-center">
+                                <div class="stat-number">{{ total_new }}</div>
+                                <div class="stat-label">Total New</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Sorting -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filters-section bg-light rounded p-3">
+                <form method="GET" id="filters-form" class="row g-3 align-items-end">
+                    <!-- Category Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>
+                                {{ cat }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Days Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Added Within</label>
+                        <select name="days" class="form-select">
+                            <option value="7" {% if current_days == 7 %}selected{% endif %}>Last 7 days</option>
+                            <option value="14" {% if current_days == 14 %}selected{% endif %}>Last 2 weeks</option>
+                            <option value="30" {% if current_days == 30 %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if current_days == 90 %}selected{% endif %}>Last 3 months</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sort Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Sort By</label>
+                        <select name="sort" class="form-select">
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>
+                                Newest First
+                            </option>
+                            <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>
+                                Price: Low to High
+                            </option>
+                            <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>
+                                Price: High to Low
+                            </option>
+                            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>
+                                Name A-Z
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <!-- Search and Filter Button -->
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>
+                            Apply Filters
+                        </button>
+                    </div>
+                    
+                    <!-- Clear Filters -->
+                    <div class="col-md-2">
+                        <a href="{{ url_for('new_arrivals') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-2"></i>
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Showing {{ products.items|length }} of {{ products.total }} new arrivals
+                    {% if current_category %}
+                        in <strong>{{ current_category }}</strong>
+                    {% endif %}
+                </div>
+                <div class="page-info">
+                    {% if products.pages > 1 %}
+                        Page {{ products.page }} of {{ products.pages }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row">
+        {% if products.items %}
+            {% for product in products.items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card product-card h-100 position-relative">
+                    <!-- New Arrival Badge -->
+                    <div class="position-absolute top-0 start-0 p-2 z-index-1">
+                        {% set days_old = (now - product.created_at).days %}
+                        {% if days_old == 0 %}
+                            <span class="badge bg-warning text-dark pulse-animation">
+                                <i class="fas fa-star me-1"></i>
+                                New
+                            </span>
+                        {% elif days_old <= 1 %}
+                            <span class="badge bg-info pulse-animation">
+                                <i class="fas fa-clock me-1"></i>
+                                Today
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-sparkles me-1"></i>
+                                {{ days_old }}d ago
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Image -->
+                    <div class="product-image-container">
+                        {% if product.image_url %}
+                            <img src="{{ product.image_url }}" 
+                                 class="card-img-top product-image" 
+                                 alt="{{ product.name }}"
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                 style="height: 200px;">
+                                <i class="fas fa-image text-muted fa-3x"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-2">
+                            <span class="badge bg-secondary mb-2">{{ product.category }}</span>
+                        </div>
+                        
+                        <h5 class="card-title product-title mb-2">
+                            <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                               class="text-decoration-none text-dark product-title-link">
+                                {{ product.name }}
+                            </a>
+                        </h5>
+                        
+                        <p class="card-text text-muted small mb-3">
+                            {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+                        </p>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h5 mb-0 text-primary">${{ "%.2f"|format(product.price) }}</span>
+                                {% if product.product_type == 'digital' %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-download me-1"></i>
+                                        Digital Product
+                                    </span>
+                                {% elif product.stock_quantity > 0 %}
+                                    <span class="text-success small">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        In Stock ({{ product.stock_quantity }})
+                                    </span>
+                                {% else %}
+                                    <span class="text-danger small">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        Out of Stock
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Add to Cart Button -->
+                            {% if current_user.is_authenticated %}
+                                {% if product.stock_quantity > 0 or product.product_type == 'digital' %}
+                                <form action="{{ url_for('add_to_cart') }}" method="POST" class="add-to-cart-form">
+                                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-cart-plus me-2"></i>
+                                        Add to Cart
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn btn-secondary w-100" disabled>
+                                    <i class="fas fa-times me-2"></i>
+                                    Out of Stock
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center">
+                                    <a href="{{ url_for('replit_auth.login') }}">Login</a> to purchase
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- No Products Found -->
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted mb-2">No New Arrivals Found</h4>
+                    <p class="text-muted mb-4">
+                        No products match your current filters. Try adjusting your search criteria.
+                    </p>
+                    <a href="{{ url_for('new_arrivals') }}" class="btn btn-primary">
+                        View All New Arrivals
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="New arrivals pagination">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('new_arrivals', page=products.prev_num, category=category, sort=sort_by, days=current_days) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in products.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != products.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('new_arrivals', page=page_num, category=category, sort=sort_by, days=current_days) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('new_arrivals', page=products.next_num, category=category, sort=sort_by, days=current_days) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.new-arrivals-header .gradient-text {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 80px;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filters-section {
+    border: 1px solid #e9ecef;
+}
+
+.product-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.product-image-container {
+    overflow: hidden;
+    position: relative;
+}
+
+.product-image {
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05);
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.z-index-1 {
+    z-index: 1;
+}
+
+.add-to-cart-form {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .new-arrivals-stats {
+        margin-top: 1rem;
+    }
+    
+    .new-arrivals-stats .d-flex {
+        justify-content: center;
+    }
+    
+    .stat-card {
+        min-width: 70px;
+        padding: 0.75rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterForm = document.getElementById('filters-form');
+    const selectElements = filterForm.querySelectorAll('select');
+    
+    selectElements.forEach(select => {
+        select.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+    
+    // Add to cart functionality
+    const addToCartForms = document.querySelectorAll('.add-to-cart-form');
+    addToCartForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
+            button.disabled = true;
+            
+            // Re-enable after a short delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 1000);
+        });
+    });
+});
+</script>
+{% endblock %}
